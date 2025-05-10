@@ -9,38 +9,38 @@ class _DesignPageState extends State<Designpage> {
   final List<Map<String, dynamic>> gameCategories = [
     {
       "name": "MOBA",
-      "image": "assets/moba.jpg",
+      "image": "assets/img/moba.jpg",
       "games": [
-        {"name": "Mobile Legends", "image": "assets/ml.jpg"},
-        {"name": "League of Legends", "image": "assets/lol.jpg"},
-        {"name": "Dota 2", "image": "assets/dota2.jpg"}
+        {"name": "Mobile Legends", "image": "assets/img/ml.jpg"},
+        {"name": "League of Legends", "image": "assets/img/lol.jpg"},
+        {"name": "Dota 2", "image": "assets/img/dota2.jpg"}
       ]
     },
     {
       "name": "FPS",
-      "image": "assets/fps.jpg",
+      "image": "assets/img/fps.jpg",
       "games": [
-        {"name": "Valorant", "image": "assets/valorant.jpg"},
-        {"name": "CS:GO", "image": "assets/csgo.jpg"},
-        {"name": "Call of Duty", "image": "assets/cod.jpg"}
+        {"name": "Valorant", "image": "assets/img/valorant.jpg"},
+        {"name": "CS:GO", "image": "assets/img/csgo.jpg"},
+        {"name": "Call of Duty", "image": "assets/img/cod.jpg"}
       ]
     },
     {
       "name": "RPG",
-      "image": "assets/rpg.jpg",
+      "image": "assets/img/rpg.jpg",
       "games": [
-        {"name": "Genshin Impact", "image": "assets/genshin.jpg"},
-        {"name": "Elden Ring", "image": "assets/eldenring.jpg"},
-        {"name": "Final Fantasy", "image": "assets/ff.jpg"}
+        {"name": "Genshin Impact", "image": "assets/img/genshin.jpg"},
+        {"name": "Elden Ring", "image": "assets/img/eldenring.jpg"},
+        {"name": "Final Fantasy", "image": "assets/img/ff.jpg"}
       ]
     },
     {
       "name": "Battle Royale",
-      "image": "assets/battle_royale.jpg",
+      "image": "assets/img/battle_royale.jpg",
       "games": [
-        {"name": "PUBG", "image": "assets/pubg.jpg"},
-        {"name": "Fortnite", "image": "assets/fortnite.jpg"},
-        {"name": "Apex Legends", "image": "assets/apex.jpg"}
+        {"name": "PUBG", "image": "assets/img/pubg.jpg"},
+        {"name": "Fortnite", "image": "assets/img/fortnite.jpg"},
+        {"name": "Apex Legends", "image": "assets/img/apex.jpg"}
       ]
     },
   ];

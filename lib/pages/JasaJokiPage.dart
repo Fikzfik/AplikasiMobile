@@ -8,18 +8,18 @@ class JasaJokiPage extends StatelessWidget {
 
   // Same game list as TopUpPage
   final List<Map<String, dynamic>> games = const [
-    {"name": "Mobile Legends", "image": "assets/ml.jpg"},
-    {"name": "League of Legends", "image": "assets/lol.jpg"},
-    {"name": "Dota 2", "image": "assets/dota2.jpg"},
-    {"name": "Valorant", "image": "assets/valorant.png"},
-    {"name": "CS:GO", "image": "assets/csgo.png"},
-    {"name": "Call of Duty", "image": "assets/cod.jpg"},
-    {"name": "Genshin Impact", "image": "assets/genshin.jpg"},
-    {"name": "Elden Ring", "image": "assets/eldenring.png"},
-    {"name": "Final Fantasy", "image": "assets/ff.png"},
-    {"name": "PUBG", "image": "assets/pubg.jpg"},
-    {"name": "Fortnite", "image": "assets/fortnite.jpg"},
-    {"name": "Apex Legends", "image": "assets/apex.png"},
+    {"name": "Mobile Legends", "image": "assets/img/ml.jpg"},
+    {"name": "League of Legends", "image": "assets/img/lol.jpg"},
+    {"name": "Dota 2", "image": "assets/img/dota2.jpg"},
+    {"name": "Valorant", "image": "assets/img/valorant.png"},
+    {"name": "CS:GO", "image": "assets/img/csgo.png"},
+    {"name": "Call of Duty", "image": "assets/img/cod.jpg"},
+    {"name": "Genshin Impact", "image": "assets/img/genshin.jpg"},
+    {"name": "Elden Ring", "image": "assets/img/eldenring.png"},
+    {"name": "Final Fantasy", "image": "assets/img/ff.png"},
+    {"name": "PUBG", "image": "assets/img/pubg.jpg"},
+    {"name": "Fortnite", "image": "assets/img/fortnite.jpg"},
+    {"name": "Apex Legends", "image": "assets/img/apex.png"},
   ];
 
   @override

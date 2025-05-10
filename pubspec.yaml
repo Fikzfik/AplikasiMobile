@@ -43,6 +43,8 @@ dependencies:
   cached_network_image: ^3.3.1
   google_fonts: ^6.2.1
   provider: ^6.1.2
+  particles_flutter: ^0.1.4
+  flutter_tilt: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -63,26 +65,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/promo1.jpg
-    - assets/promo2.jpg
-    - assets/promo3.jpg
-    - assets/moba.jpg
-    - assets/fps.jpg
-    - assets/battle_royale.jpeg
-    - assets/rpg.jpg
-    - assets/ml.jpg
-    - assets/lol.jpg
-    - assets/dota2.jpg
-    - assets/valorant.png
-    - assets/csgo.png
-    - assets/cod.jpg
-    - assets/genshin.jpg
-    - assets/eldenring.png
-    - assets/ff.png
-    - assets/pubg.jpg
-    - assets/fortnite.jpg
-    - assets/apex.png
-    - assets/logo.png
+    - assets/img/
+   
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

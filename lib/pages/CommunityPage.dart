@@ -16,38 +16,38 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
   final List<Map<String, dynamic>> gameCategories = [
     {
       "name": "MOBA",
-      "image": "assets/moba.jpg",
+      "image": "assets/img/moba.jpg",
       "games": [
-        {"name": "Mobile Legends", "image": "assets/ml.jpg"},
-        {"name": "League of Legends", "image": "assets/lol.jpg"},
-        {"name": "Dota 2", "image": "assets/dota2.jpg"}
+        {"name": "Mobile Legends", "image": "assets/img/ml.jpg"},
+        {"name": "League of Legends", "image": "assets/img/lol.jpg"},
+        {"name": "Dota 2", "image": "assets/img/dota2.jpg"}
       ]
     },
     {
       "name": "FPS",
-      "image": "assets/fps.jpg",
+      "image": "assets/img/fps.jpg",
       "games": [
-        {"name": "Valorant", "image": "assets/valorant.png"},
-        {"name": "CS:GO", "image": "assets/csgo.png"},
-        {"name": "Call of Duty", "image": "assets/cod.jpg"}
+        {"name": "Valorant", "image": "assets/img/valorant.png"},
+        {"name": "CS:GO", "image": "assets/img/csgo.png"},
+        {"name": "Call of Duty", "image": "assets/img/cod.jpg"}
       ]
     },
     {
       "name": "RPG",
-      "image": "assets/rpg.jpg",
+      "image": "assets/img/rpg.jpg",
       "games": [
-        {"name": "Genshin Impact", "image": "assets/genshin.jpg"},
-        {"name": "Elden Ring", "image": "assets/eldenring.png"},
-        {"name": "Final Fantasy", "image": "assets/ff.png"}
+        {"name": "Genshin Impact", "image": "assets/img/genshin.jpg"},
+        {"name": "Elden Ring", "image": "assets/img/eldenring.png"},
+        {"name": "Final Fantasy", "image": "assets/img/ff.png"}
       ]
     },
     {
       "name": "Battle Royale",
-      "image": "assets/battle_royale.jpeg",
+      "image": "assets/img/battle_royale.jpeg",
       "games": [
-        {"name": "PUBG", "image": "assets/pubg.jpg"},
-        {"name": "Fortnite", "image": "assets/fortnite.jpg"},
-        {"name": "Apex Legends", "image": "assets/apex.png"}
+        {"name": "PUBG", "image": "assets/img/pubg.jpg"},
+        {"name": "Fortnite", "image": "assets/img/fortnite.jpg"},
+        {"name": "Apex Legends", "image": "assets/img/apex.png"}
       ]
     },
   ];
@@ -101,7 +101,7 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1A1D40) : const Color(0xFF2C2F50),
+      backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         title: FadeTransition(
           opacity: _fadeAnimation,
@@ -111,22 +111,23 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(250 / 2),
                   color: Colors.blueGrey,
                   border: Border.all(
                     color: isDark ? Colors.white : Colors.black54,
-                    width: 3,
+                    width: 5,
                   ),
-                  image: const DecorationImage(
+                  image: DecorationImage(
                     fit: BoxFit.cover,
                     image: NetworkImage("https://picsum.photos/id/798/200/300"),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Text(
                 "Welcome, Gamer!",
                 style: TextStyle(
+                  fontFamily: "Poppins",
                   fontSize: 18,
                   color: isDark ? Colors.white70 : Colors.black87,
                 ),
@@ -136,17 +137,10 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.notifications,
-              color: isDark ? Colors.white70 : Colors.black54,
-            ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon!')),
-              );
-            },
+            icon: Icon(Icons.notifications, color: isDark ? Colors.white70 : Colors.black54),
+            onPressed: () {},
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
         ],
       ),
       body: SingleChildScrollView(

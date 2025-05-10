@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 Widget buildPromoBanner(BuildContext context) {
   List<String> promoImages = [
-    'assets/promo1.jpg',
-    'assets/promo2.jpg',
-    'assets/promo3.jpg'
+    'assets/img/promo1.jpg',
+    'assets/img/promo2.jpg',
+    'assets/img/promo3.jpg'
   ];
 
   return Container(

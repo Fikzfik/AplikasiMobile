@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fikzuas/pages/BokingPage.dart';
+import 'package:fikzuas/pages/WarnetSelectionPage.dart';
 import 'package:fikzuas/pages/HomePage.dart';
 import 'package:fikzuas/pages/JasaJokiPage.dart';
 import 'package:fikzuas/pages/RegisterPage.dart';
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
-        primaryColor: const Color(0xFF1A1D40),
+        primaryColor: const Color.fromARGB(255, 255, 255, 255),
         scaffoldBackgroundColor: Colors.grey[100],
         colorScheme: const ColorScheme.light(
           primary: Color(0xFF1A1D40),
@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/design': (context) => Designpage(),
-        '/boking': (context) => BookingPage(),
+        '/warnet_selection': (context) => WarnetSelectionPage(), // Add this route
         '/sewaps': (context) => SewaPsPage(),
         '/topup': (context) => TopUpPage(),
         '/joki': (context) => JasaJokiPage(),

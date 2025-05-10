@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/clipper.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:fikzuas/main.dart';
+import 'package:fikzuas/widgets/clipper.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -122,11 +124,11 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1A1D40) : const Color(0xFF2C2F50),
+      backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         title: FadeTransition(
           opacity: _fadeAnimation,
@@ -151,10 +153,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               const SizedBox(width: 10),
               Text(
                 "Welcome, Gamer!",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
               ),
             ],
           ),
@@ -194,12 +195,11 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
               ),
             ],
           ),
-          labelStyle: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-          unselectedLabelStyle: const TextStyle(fontSize: 14),
+          labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+          unselectedLabelStyle: Theme.of(context).textTheme.bodyMedium,
           unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
           labelColor: isDark ? Colors.white : Colors.black87,
           tabs: historyCategories.map((category) {
@@ -256,11 +256,10 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                     children: [
                       Text(
                         "Sort By",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                       ),
                       DropdownButton<String>(
                         value: _sortOption,
@@ -269,9 +268,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                             value: value,
                             child: Text(
                               value,
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
                             ),
                           );
                         }).toList(),
@@ -280,9 +279,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                             _sortOption = newValue!;
                           });
                         },
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                         dropdownColor: isDark ? const Color(0xFF1A1D40) : Colors.white,
                         icon: Icon(
                           Icons.arrow_drop_down,
@@ -310,16 +309,16 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                   showDialog(
                                     context: context,
                                     builder: (_) => AlertDialog(
-                                      backgroundColor: isDark ? const Color(0xFF1A1D40) : Colors.white,
+                                      backgroundColor: Theme.of(context).colorScheme.background,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       title: Text(
                                         item["title"],
-                                        style: TextStyle(
-                                          color: isDark ? Colors.white : Colors.black87,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                              color: isDark ? Colors.white : Colors.black87,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                       ),
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -327,31 +326,31 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                         children: [
                                           Text(
                                             "Amount: ${item["amount"]}",
-                                            style: const TextStyle(
-                                              color: Colors.greenAccent,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: Colors.greenAccent,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
                                             "Date: ${item["date"]}",
-                                            style: TextStyle(
-                                              color: isDark ? Colors.white70 : Colors.black54,
-                                            ),
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: isDark ? Colors.white70 : Colors.black54,
+                                                ),
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
                                             "Details: ${item["details"]}",
-                                            style: TextStyle(
-                                              color: isDark ? Colors.white70 : Colors.black54,
-                                            ),
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: isDark ? Colors.white70 : Colors.black54,
+                                                ),
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
                                             "Transaction ID: ${item["transactionId"]}",
-                                            style: TextStyle(
-                                              color: isDark ? Colors.white70 : Colors.black54,
-                                            ),
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: isDark ? Colors.white70 : Colors.black54,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -360,9 +359,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                           onPressed: () => Navigator.pop(context),
                                           child: Text(
                                             "Close",
-                                            style: TextStyle(
-                                              color: isDark ? Colors.white70 : Colors.black54,
-                                            ),
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: isDark ? Colors.white70 : Colors.black54,
+                                                ),
                                           ),
                                         ),
                                       ],
@@ -370,10 +369,8 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                   );
                                 },
                                 child: Card(
-                                  elevation: 4,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  elevation: Theme.of(context).cardTheme.elevation,
+                                  shape: Theme.of(context).cardTheme.shape,
                                   color: isDark ? const Color(0xFF262A50) : Colors.white,
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -382,11 +379,10 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                       children: [
                                         Text(
                                           item["title"],
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark ? Colors.white : Colors.black87,
-                                            fontSize: 16,
-                                          ),
+                                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark ? Colors.white : Colors.black87,
+                                              ),
                                         ).animate().fade(
                                               duration: 600.ms,
                                               curve: Curves.easeOut,
@@ -397,11 +393,10 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                         const SizedBox(height: 8),
                                         Text(
                                           "Amount: ${item["amount"]}",
-                                          style: const TextStyle(
-                                            color: Colors.greenAccent,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                color: Colors.greenAccent,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                         ).animate().fade(
                                               duration: 700.ms,
                                               curve: Curves.easeOut,
@@ -412,10 +407,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                         const SizedBox(height: 8),
                                         Text(
                                           "Date: ${item["date"]}",
-                                          style: TextStyle(
-                                            color: isDark ? Colors.white70 : Colors.black54,
-                                            fontSize: 14,
-                                          ),
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                color: isDark ? Colors.white70 : Colors.black54,
+                                              ),
                                         ).animate().fade(
                                               duration: 700.ms,
                                               curve: Curves.easeOut,
@@ -426,10 +420,9 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
                                         const SizedBox(height: 8),
                                         Text(
                                           "Details: ${item["details"]}",
-                                          style: TextStyle(
-                                            color: isDark ? Colors.white70 : Colors.black54,
-                                            fontSize: 14,
-                                          ),
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                color: isDark ? Colors.white70 : Colors.black54,
+                                              ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ).animate().fade(
@@ -458,37 +451,4 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
       ),
     );
   }
-}
-
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 100);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
-    var secondEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
