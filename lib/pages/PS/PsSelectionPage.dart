@@ -1,46 +1,30 @@
+import 'package:fikzuas/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fikzuas/pages/PcListPage.dart';
-import 'package:fikzuas/main.dart';
+import 'PsUnitListPage.dart';
+import 'PsRentalState.dart';
 
-class BookingState with ChangeNotifier {
-  Map<String, List<bool>> warnetPcSlots = {
-    "CyberNet Central": List<bool>.filled(5, true), // 5 PCs
-    "GamerZone East": List<bool>.filled(7, true), // 7 PCs
-    "NetPlay South": List<bool>.filled(9, true), // 9 PCs
-  };
-
-  void bookSlot(String warnetName, int index) {
-    warnetPcSlots[warnetName]![index - 1] = false;
-    notifyListeners();
-  }
-
-  int getAvailableSlots(String warnetName) {
-    return warnetPcSlots[warnetName]!.where((slot) => slot).length;
-  }
-}
-
-class WarnetSelectionPage extends StatelessWidget {
-  final List<Map<String, dynamic>> warnetLocations = [
+class PsSelectionPage extends StatelessWidget {
+  final List<Map<String, dynamic>> psLocations = [
     {
-      "name": "CyberNet Central",
+      "name": "PlayZone Central",
       "address": "Jl. Sudirman No. 12, Jakarta",
-      "image": "assets/img/net1.png",
-      "availablePcs": 5,
+      "image": "assets/img/ps1.png",
+      "availableUnits": 5,
       "rating": 4.7,
     },
     {
-      "name": "GamerZone East",
+      "name": "GameHub East",
       "address": "Jl. Thamrin No. 45, Jakarta",
-      "image": "assets/img/net2.png",
-      "availablePcs": 7,
+      "image": "assets/img/ps2.png",
+      "availableUnits": 7,
       "rating": 4.3,
     },
     {
-      "name": "NetPlay South",
+      "name": "FunPlay South",
       "address": "Jl. Gatot Subroto No. 78, Jakarta",
-      "image": "assets/img/net3.png",
-      "availablePcs": 9,
+      "image": "assets/img/ps3.png",
+      "availableUnits": 9,
       "rating": 4.5,
     },
   ];
@@ -56,7 +40,7 @@ class WarnetSelectionPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'My Warnet',
+              'My PS Rental',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.bold,
@@ -69,9 +53,8 @@ class WarnetSelectionPage extends StatelessWidget {
                 color: isDark ? Colors.white70 : theme.colorScheme.primary,
               ),
               onPressed: () {
-                // Pastikan ThemeProvider sudah didefinisikan
-                // Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-                // Jika ThemeProvider belum ada, komentar ini atau definisikan ThemeProvider
+                // Toggle theme if ThemeProvider is defined
+                Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
               },
             ),
           ],
@@ -100,7 +83,6 @@ class WarnetSelectionPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 8),
-                // Search Bar
                 Container(
                   margin: EdgeInsets.symmetric(vertical: 8.0),
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -118,7 +100,7 @@ class WarnetSelectionPage extends StatelessWidget {
                       Expanded(
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText: 'Search warnet...',
+                            hintText: 'Search PS location...',
                             hintStyle: TextStyle(
                               fontFamily: 'Poppins',
                               color: isDark ? Colors.white70 : Colors.black54,
@@ -133,14 +115,13 @@ class WarnetSelectionPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 16.0),
-                // List of Warnet Cards
                 Expanded(
                   child: ListView.builder(
                     padding: EdgeInsets.only(bottom: 16.0),
-                    itemCount: warnetLocations.length,
+                    itemCount: psLocations.length,
                     itemBuilder: (context, index) {
-                      final warnet = warnetLocations[index];
-                      return _buildWarnetCard(context, warnet, theme, isDark);
+                      final psLocation = psLocations[index];
+                      return _buildPsCard(context, psLocation, theme, isDark);
                     },
                   ),
                 ),
@@ -152,17 +133,15 @@ class WarnetSelectionPage extends StatelessWidget {
     );
   }
 
-  Widget _buildWarnetCard(BuildContext context, Map<String, dynamic> warnet,
+  Widget _buildPsCard(BuildContext context, Map<String, dynamic> psLocation,
       ThemeData theme, bool isDark) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChangeNotifierProvider(
-              create: (_) => BookingState(),
-              child: PcListPage(warnetName: warnet["name"]!),
-            ),
+            builder: (context) =>
+                PsUnitListPage(psLocation: psLocation["name"]!),
           ),
         );
       },
@@ -177,11 +156,10 @@ class WarnetSelectionPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Gambar Warnet
               ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(15.0)),
                 child: Image.asset(
-                  warnet["image"]!,
+                  psLocation["image"]!,
                   height: 150.0,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -203,7 +181,7 @@ class WarnetSelectionPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          warnet["name"]!,
+                          psLocation["name"]!,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.bold,
@@ -213,7 +191,7 @@ class WarnetSelectionPage extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              '${warnet["rating"]}',
+                              '${psLocation["rating"]}',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontFamily: 'Poppins',
                                 color: isDark ? Colors.white70 : Colors.black54,
@@ -230,7 +208,7 @@ class WarnetSelectionPage extends StatelessWidget {
                     ),
                     SizedBox(height: 4.0),
                     Text(
-                      warnet["address"]!,
+                      psLocation["address"]!,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontFamily: 'Poppins',
                         color: isDark ? Colors.white54 : Colors.black54,
@@ -240,7 +218,7 @@ class WarnetSelectionPage extends StatelessWidget {
                     ),
                     SizedBox(height: 8.0),
                     Text(
-                      'Available PCs: ${warnet["availablePcs"]}',
+                      'Available Units: ${psLocation["availableUnits"]}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontFamily: 'Poppins',
                         color: isDark ? Colors.white70 : Colors.black54,

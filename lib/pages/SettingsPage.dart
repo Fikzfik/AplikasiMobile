@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -17,6 +19,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
   bool isDataExpanded = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  String? userName; // Variabel untuk menyimpan nama pengguna
 
   @override
   void initState() {
@@ -28,6 +31,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _loadUserData(); // Ambil data pengguna saat init
     super.initState();
   }
 
@@ -35,6 +39,43 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
   void dispose() {
     _pulseController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) {
+      try {
+        final response = await http.get(
+          Uri.parse('http://10.0.2.2:8000/api/user'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          setState(() {
+            userName = data['user']['name']; // Simpan nama pengguna
+          });
+        } else {
+          setState(() {
+            userName = "Pengguna Tidak Ditemukan";
+          });
+          print('Gagal memuat data pengguna. Status: ${response.statusCode}');
+        }
+      } catch (e) {
+        setState(() {
+          userName = "Error: $e";
+        });
+        print('Error memuat data pengguna: $e');
+      }
+    } else {
+      setState(() {
+        userName = "Belum Login";
+      });
+    }
   }
 
   Future<void> fetchData() async {
@@ -66,7 +107,6 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     final isDark = Provider.of<ThemeProvider>(context).isDark;
 
     return Scaffold(
-     
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
@@ -236,7 +276,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                       ).animate().scale(duration: 800.ms, curve: Curves.easeOut),
                       SizedBox(height: 16),
                       Text(
-                        "Fikri Ardiansyah",
+                        userName ?? "Memuat Nama...",
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.bold,

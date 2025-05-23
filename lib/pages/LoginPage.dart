@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../widgets/clipper.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'homepage.dart'; // Pastikan ada halaman home
 
 class LoginPage extends StatefulWidget {
   @override
@@ -16,23 +18,32 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController _passwordController = TextEditingController();
 
   Future<void> login(String email, String password) async {
-    final response = await http.post( 
-      Uri.parse('http://10.0.2.2:8000/api/login'),  // Ganti dengan endpoint API login backend Laravel Anda
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/api/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success']) {
-        print('Login sukses: ${data['user']['name']}');
-        // Menyimpan token atau data user di local storage atau shared preferences untuk sesi
-        Navigator.pushNamed(context, '/home');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', data['token']);
+          await prefs.setString('user', jsonEncode(data['user']));
+          print('Login sukses: ${data['user']['name']}');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        } else {
+          showErrorDialog(data['message'] ?? 'Login gagal.');
+        }
       } else {
-        showErrorDialog('Login gagal. Periksa email dan password Anda.');
+        showErrorDialog('Terjadi kesalahan. Server tidak merespons.');
       }
-    } else {
-      showErrorDialog('Terjadi kesalahan. Server tidak merespons.');
+    } catch (e) {
+      showErrorDialog('Error: $e');
     }
   }
 
@@ -63,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     double maxWidth = screenWidth < 500 ? screenWidth * 0.9 : 400;
-    double fontSizeLarge = screenWidth * 0.06; // responsif font
+    double fontSizeLarge = screenWidth * 0.06;
     double fontSizeMedium = screenWidth * 0.045;
 
     return Scaffold(
@@ -85,7 +96,6 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Top Section
                       ClipPath(
                         clipper: TopDiagonalClipper(),
                         child: Container(
@@ -110,29 +120,23 @@ class _LoginPageState extends State<LoginPage> {
                                 style: TextStyle(
                                   fontSize: fontSizeLarge,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
+                                  color: isDarkMode ? Colors.white : Colors.black,
                                 ),
                               ),
                               SizedBox(height: 16),
                               TextField(
                                 controller: _emailController,
                                 style: TextStyle(
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
+                                  color: isDarkMode ? Colors.white : Colors.black,
                                   fontSize: fontSizeMedium,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Email Address',
                                   hintStyle: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.white54
-                                        : Colors.grey,
+                                    color: isDarkMode ? Colors.white54 : Colors.grey,
                                   ),
                                   prefixIcon: Icon(Icons.email,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black),
+                                      color: isDarkMode ? Colors.white : Colors.black),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -143,21 +147,16 @@ class _LoginPageState extends State<LoginPage> {
                                 controller: _passwordController,
                                 obscureText: true,
                                 style: TextStyle(
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
+                                  color: isDarkMode ? Colors.white : Colors.black,
                                   fontSize: fontSizeMedium,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Password',
                                   hintStyle: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.white54
-                                        : Colors.grey,
+                                    color: isDarkMode ? Colors.white54 : Colors.grey,
                                   ),
                                   prefixIcon: Icon(Icons.lock,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black),
+                                      color: isDarkMode ? Colors.white : Colors.black),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -173,18 +172,15 @@ class _LoginPageState extends State<LoginPage> {
                                         _rememberMe = value;
                                       });
                                     },
-                                    activeColor: isDarkMode
-                                        ? Colors.blueAccent
-                                        : Color(0xFF1A1D40),
+                                    activeColor: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
                                   ),
                                   SizedBox(width: 10),
                                   Text(
                                     'Remember me',
                                     style: TextStyle(
-                                        fontSize: fontSizeMedium,
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black),
+                                      fontSize: fontSizeMedium,
+                                      color: isDarkMode ? Colors.white : Colors.black,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -193,8 +189,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-
-                      // Bottom Section
                       ClipPath(
                         clipper: BottomDiagonalClipper(),
                         child: Container(
@@ -217,9 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                                     'Forgot password?',
                                     style: TextStyle(
                                       fontSize: fontSizeMedium,
-                                      color: isDarkMode
-                                          ? Colors.blueAccent
-                                          : Color(0xFF1A1D40),
+                                      color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
                                     ),
                                   ),
                                 ),
@@ -239,7 +231,6 @@ class _LoginPageState extends State<LoginPage> {
                                     });
                                   },
                                   onTap: () {
-                                    // Lakukan login
                                     String email = _emailController.text;
                                     String password = _passwordController.text;
                                     if (email.isNotEmpty && password.isNotEmpty) {
@@ -253,14 +244,10 @@ class _LoginPageState extends State<LoginPage> {
                                     decoration: BoxDecoration(
                                       color: _isPressed
                                           ? Colors.white
-                                          : (isDarkMode
-                                              ? Colors.blueAccent
-                                              : Color(0xFF1A1D40)),
+                                          : (isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40)),
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: isDarkMode
-                                            ? Colors.blueAccent
-                                            : Color(0xFF1A1D40),
+                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
                                       ),
                                     ),
                                     padding: EdgeInsets.symmetric(vertical: 14),
@@ -270,9 +257,7 @@ class _LoginPageState extends State<LoginPage> {
                                         style: TextStyle(
                                           fontSize: fontSizeMedium,
                                           color: _isPressed
-                                              ? (isDarkMode
-                                                  ? Colors.black
-                                                  : Color(0xFF1A1D40))
+                                              ? (isDarkMode ? Colors.black : Color(0xFF1A1D40))
                                               : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -286,8 +271,7 @@ class _LoginPageState extends State<LoginPage> {
                                 'or login with',
                                 style: TextStyle(
                                   fontSize: fontSizeMedium,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
+                                  color: isDarkMode ? Colors.white : Colors.black,
                                 ),
                               ),
                               SizedBox(height: 16),
@@ -297,36 +281,28 @@ class _LoginPageState extends State<LoginPage> {
                                   IconButton(
                                     iconSize: screenWidth * 0.08,
                                     icon: Icon(Icons.facebook,
-                                        color: isDarkMode
-                                            ? Colors.blueAccent
-                                            : Color(0xFF1A1D40)),
+                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40)),
                                     onPressed: () {},
                                   ),
                                   IconButton(
                                     iconSize: screenWidth * 0.08,
-                                    icon: Icon(Icons.camera_alt,
-                                        color: Colors.red),
+                                    icon: Icon(Icons.camera_alt, color: Colors.red),
                                     onPressed: () {},
                                   ),
                                   IconButton(
                                     iconSize: screenWidth * 0.08,
-                                    icon: Icon(Icons.android,
-                                        color: Colors.green),
+                                    icon: Icon(Icons.android, color: Colors.green),
                                     onPressed: () {},
                                   ),
                                   IconButton(
                                     iconSize: screenWidth * 0.08,
                                     icon: Icon(Icons.apple,
-                                        color: isDarkMode
-                                            ? Colors.blueAccent
-                                            : Color(0xFF1A1D40)),
+                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40)),
                                     onPressed: () {},
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                height: 16,
-                              ),
+                              SizedBox(height: 16),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -334,25 +310,20 @@ class _LoginPageState extends State<LoginPage> {
                                     "Don't have an account?",
                                     style: TextStyle(
                                       fontSize: fontSizeMedium,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                                      color: isDarkMode ? Colors.white : Colors.black,
                                     ),
                                   ),
                                   SizedBox(width: 8),
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.pushNamed(context,
-                                          '/register'); // Pastikan route ini sudah didefinisikan
+                                      Navigator.pushNamed(context, '/register');
                                     },
                                     child: Text(
                                       "Register",
                                       style: TextStyle(
                                         fontSize: fontSizeMedium,
                                         fontWeight: FontWeight.bold,
-                                        color: isDarkMode
-                                            ? Colors.blueAccent
-                                            : Color(0xFF1A1D40),
+                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
                                         decoration: TextDecoration.underline,
                                       ),
                                     ),

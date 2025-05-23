@@ -1,11 +1,14 @@
+import 'package:fikzuas/pages/PS/PsSelectionPage.dart';
+import 'package:fikzuas/pages/TopUp/TopUpGameSelectionPage.dart';
 import 'package:flutter/material.dart';
-import 'package:fikzuas/pages/WarnetSelectionPage.dart';
+import 'package:fikzuas/pages/Warnet/WarnetSelectionPage.dart';
 import 'package:fikzuas/pages/HomePage.dart';
 import 'package:fikzuas/pages/JasaJokiPage.dart';
 import 'package:fikzuas/pages/RegisterPage.dart';
 import 'package:fikzuas/pages/LoginPage.dart';
 import 'package:fikzuas/pages/DesignPage.dart';
-import 'package:fikzuas/pages/SewaPSPage.dart';
+import 'package:fikzuas/pages/PS/PsRentalState.dart';
+import 'package:fikzuas/pages/PS/PsDateSelectionPage.dart';
 import 'package:fikzuas/pages/TopUpPage.dart';
 import 'package:fikzuas/pages/SettingsPage.dart';
 import 'package:provider/provider.dart';
@@ -23,8 +26,11 @@ class ThemeProvider with ChangeNotifier {
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => PsRentalState()),
+      ],
       child: MyApp(),
     ),
   );
@@ -81,8 +87,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => RegisterPage(),
         '/design': (context) => Designpage(),
         '/warnet_selection': (context) => WarnetSelectionPage(), // Add this route
-        '/sewaps': (context) => SewaPsPage(),
-        '/topup': (context) => TopUpPage(),
+        '/sewaps': (context) => PsSelectionPage(),
+        '/topup': (context) => TopUpGameSelectionPage(),
         '/joki': (context) => JasaJokiPage(),
         '/settings': (context) => SettingsPage(),
         '/logout': (context) => LoginPage(),
