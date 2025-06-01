@@ -79,85 +79,103 @@ class WarnetSelectionPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [theme.colorScheme.primary, theme.scaffoldBackgroundColor]
-                : [Colors.grey[200]!, Colors.white],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 8),
-                // Search Bar
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 8.0),
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+      body: Stack(
+        children: [
+          // Background dengan WaveClipper
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.65,
+              child: ClipPath(
+                clipper: WaveClipper(),
+                child: Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Color(0xFF2C2F50).withOpacity(0.3)
-                        : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search,
-                          color: isDark ? Colors.white70 : Colors.black54),
-                      SizedBox(width: 8.0),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search warnet...',
-                            hintStyle: TextStyle(
-                              fontFamily: 'Poppins',
-                              color: isDark ? Colors.white70 : Colors.black54,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.tune,
-                          color: isDark ? Colors.white70 : Colors.black54),
-                    ],
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
+                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.0, 1.0],
+                    ),
                   ),
                 ),
-                SizedBox(height: 16.0),
-                // FutureBuilder untuk daftar warnet
-                Expanded(
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: fetchWarnetData(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(child: Text('No warnet available'));
-                      } else {
-                        final warnetList = snapshot.data!;
-                        return ListView.builder(
-                          padding: EdgeInsets.only(bottom: 16.0),
-                          itemCount: warnetList.length,
-                          itemBuilder: (context, index) {
-                            final warnet = warnetList[index];
-                            return _buildWarnetCard(context, warnet, theme, isDark);
-                          },
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          // Konten utama
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 8),
+                  // Search Bar
+                  Container(
+                    margin: EdgeInsets.symmetric(vertical: 8.0),
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Color(0xFF2C2F50).withOpacity(0.3)
+                          : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search,
+                            color: isDark ? Colors.white70 : Colors.black54),
+                        SizedBox(width: 8.0),
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search warnet...',
+                              hintStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                color: isDark ? Colors.white70 : Colors.black54,
+                              ),
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.tune,
+                            color: isDark ? Colors.white70 : Colors.black54),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  // FutureBuilder untuk daftar warnet
+                  Expanded(
+                    child: FutureBuilder<List<Map<String, dynamic>>>(
+                      future: fetchWarnetData(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return Center(child: Text('No warnet available'));
+                        } else {
+                          final warnetList = snapshot.data!;
+                          return ListView.builder(
+                            padding: EdgeInsets.only(bottom: 16.0),
+                            itemCount: warnetList.length,
+                            itemBuilder: (context, index) {
+                              final warnet = warnetList[index];
+                              return _buildWarnetCard(context, warnet, theme, isDark);
+                            },
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -269,4 +287,37 @@ class WarnetSelectionPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 100);
+
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2, size.height - 50);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+
+    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
+    var secondEndPoint = Offset(size.width, size.height - 100);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

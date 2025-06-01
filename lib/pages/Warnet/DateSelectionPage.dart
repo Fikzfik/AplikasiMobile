@@ -1,23 +1,26 @@
-import 'package:fikzuas/pages/Warnet/TimeSelectionPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:fikzuas/pages/Warnet/TimeSelectionPage.dart';
 
 class DateSelectionPage extends StatefulWidget {
   final String warnetName;
   final int pcNumber;
+  final int warnetId;
+  final int? pcId;
 
   const DateSelectionPage({
     Key? key,
     required this.warnetName,
-    required this.pcNumber, required pcId,
+    required this.pcNumber,
+    required this.warnetId,
+    required this.pcId,
   }) : super(key: key);
 
   @override
   _DateSelectionPageState createState() => _DateSelectionPageState();
 }
 
-class _DateSelectionPageState extends State<DateSelectionPage>
-    with SingleTickerProviderStateMixin {
+class _DateSelectionPageState extends State<DateSelectionPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -48,14 +51,12 @@ class _DateSelectionPageState extends State<DateSelectionPage>
     super.dispose();
   }
 
-  // Mendapatkan jumlah hari dalam bulan
   int _daysInMonth(DateTime date) {
     return DateTime(date.year, date.month + 1, 0).day;
   }
 
-  // Mendapatkan hari pertama dalam bulan (untuk offset grid)
   int _firstDayOffset(DateTime date) {
-    return DateTime(date.year, date.month, 1).weekday % 7; // Minggu = 0
+    return DateTime(date.year, date.month, 1).weekday % 7;
   }
 
   @override
@@ -63,18 +64,10 @@ class _DateSelectionPageState extends State<DateSelectionPage>
     final screenHeight = MediaQuery.of(context).size.height;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Daftar nama hari
     const List<String> daysOfWeek = [
-      'Sun',
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat'
+      'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
     ];
 
-    // Hitung jumlah hari dan offset
     final daysInMonth = _daysInMonth(_currentMonth);
     final firstDayOffset = _firstDayOffset(_currentMonth);
     final totalGridItems = firstDayOffset + daysInMonth;
@@ -82,7 +75,6 @@ class _DateSelectionPageState extends State<DateSelectionPage>
     return Scaffold(
       body: Stack(
         children: [
-          // Latar belakang dengan efek wave clipper
           Positioned(
             top: 0,
             left: 0,
@@ -95,14 +87,8 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
-                          ? [
-                              Color(0xFF2C2F50),
-                              Color(0xFF1A1D40).withOpacity(0.9),
-                            ]
-                          : [
-                              Color(0xFF3A3D60),
-                              Color(0xFF2C2F50).withOpacity(0.85),
-                            ],
+                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
+                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0.0, 1.0],
@@ -120,7 +106,6 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // AppBar Custom
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -157,24 +142,18 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                             ),
                           ),
                         ),
-                        SizedBox(
-                            width: 48), // Placeholder untuk menjaga tata letak
+                        SizedBox(width: 48),
                       ],
                     ),
                     SizedBox(height: 16),
-                    // Info PC yang dipilih
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Container(
                         margin: EdgeInsets.symmetric(vertical: 10),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Colors.black.withOpacity(0.2),
-                              Colors.black.withOpacity(0.1),
-                            ],
+                            colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.1)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -207,7 +186,6 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                       ),
                     ),
                     SizedBox(height: 16),
-                    // Header Bulan dan Navigasi
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -219,11 +197,7 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                           ),
                           onPressed: () {
                             setState(() {
-                              _currentMonth = DateTime(
-                                _currentMonth.year,
-                                _currentMonth.month - 1,
-                                1,
-                              );
+                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
                               selectedDate = null;
                             });
                           },
@@ -252,11 +226,7 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                           ),
                           onPressed: () {
                             setState(() {
-                              _currentMonth = DateTime(
-                                _currentMonth.year,
-                                _currentMonth.month + 1,
-                                1,
-                              );
+                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
                               selectedDate = null;
                             });
                           },
@@ -264,7 +234,6 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                       ],
                     ),
                     SizedBox(height: 16),
-                    // Nama Hari
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: daysOfWeek.map((day) {
@@ -291,7 +260,6 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                       }).toList(),
                     ).animate().fadeIn(duration: 600.ms),
                     SizedBox(height: 8),
-                    // Grid Tanggal
                     GridView.builder(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
@@ -302,34 +270,40 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                         mainAxisSpacing: 8,
                         childAspectRatio: 1.0,
                       ),
-                      itemCount:
-                          (totalGridItems + 6) ~/ 7 * 7, // Pastikan grid penuh
+                      itemCount: (totalGridItems + 6) ~/ 7 * 7,
                       itemBuilder: (context, index) {
                         final dayIndex = index - firstDayOffset + 1;
                         final date = dayIndex > 0 && dayIndex <= daysInMonth
-                            ? DateTime(_currentMonth.year, _currentMonth.month,
-                                dayIndex)
+                            ? DateTime(_currentMonth.year, _currentMonth.month, dayIndex)
                             : null;
 
                         if (date == null) {
-                          return SizedBox
-                              .shrink(); // Kosongkan slot sebelum tanggal 1
+                          return SizedBox.shrink();
                         }
 
                         final isSelected = selectedDate == date;
                         final isToday = date.day == DateTime.now().day &&
                             date.month == DateTime.now().month &&
                             date.year == DateTime.now().year;
-                        final isPast = date.isBefore(
-                            DateTime.now().subtract(Duration(days: 1)));
+                        final isPast = date.isBefore(DateTime.now().subtract(Duration(days: 1)));
 
                         return GestureDetector(
                           onTap: isPast
                               ? null
                               : () {
-                                  setState(() {
-                                    selectedDate = date;
-                                  });
+                                  // Langsung navigasi ke TimeSelectionPage saat tanggal dipilih
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TimeSelectionPage(
+                                        warnetName: widget.warnetName,
+                                        pcNumber: widget.pcNumber,
+                                        selectedDate: date,
+                                        warnetId: widget.warnetId,
+                                        pcId: widget.pcId,
+                                      ),
+                                    ),
+                                  );
                                 },
                           child: AnimatedContainer(
                             duration: Duration(milliseconds: 300),
@@ -341,31 +315,19 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                                     : (isToday
                                         ? [Colors.blueAccent, Colors.blue]
                                         : (isPast
-                                            ? [
-                                                Colors.grey[400]!,
-                                                Colors.grey[500]!
-                                              ]
-                                            : [
-                                                Colors.white,
-                                                Colors.grey[200]!
-                                              ])),
+                                            ? [Colors.grey[400]!, Colors.grey[500]!]
+                                            : [Colors.white, Colors.grey[200]!])),
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               border: isSelected
-                                  ? Border.all(
-                                      color:
-                                          Colors.amberAccent.withOpacity(0.7),
-                                      width: 2,
-                                    )
+                                  ? Border.all(color: Colors.amberAccent.withOpacity(0.7), width: 2)
                                   : null,
                               boxShadow: [
                                 BoxShadow(
                                   color: isSelected
                                       ? Colors.amber.withOpacity(0.5)
-                                      : (isToday
-                                          ? Colors.blue.withOpacity(0.3)
-                                          : Colors.grey.withOpacity(0.2)),
+                                      : (isToday ? Colors.blue.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
                                   blurRadius: isSelected ? 10 : 6,
                                   offset: Offset(0, 2),
                                 ),
@@ -382,96 +344,13 @@ class _DateSelectionPageState extends State<DateSelectionPage>
                                       ? Colors.black87
                                       : (isToday
                                           ? Colors.white
-                                          : (isPast
-                                              ? Colors.grey[700]
-                                              : Colors.black54)),
+                                          : (isPast ? Colors.grey[700] : Colors.black54)),
                                 ),
                               ),
                             ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 500.ms + (index * 20).ms)
-                              .scale(),
+                          ).animate().fadeIn(duration: 500.ms + (index * 20).ms).scale(),
                         );
                       },
-                    ),
-                    SizedBox(height: 24),
-                    // Tombol Lanjut
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        child: AnimatedContainer(
-                          duration: Duration(milliseconds: 500),
-                          child: ElevatedButton(
-                            onPressed: selectedDate != null
-                                ? () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => TimeSelectionPage(
-                                          warnetName: widget.warnetName,
-                                          pcNumber: widget.pcNumber,
-                                          selectedDate: selectedDate!,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: selectedDate != null
-                                      ? [Colors.purpleAccent, Colors.blueAccent]
-                                      : [Colors.grey[600]!, Colors.grey[700]!],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: selectedDate != null
-                                        ? Colors.purpleAccent.withOpacity(0.4)
-                                        : Colors.grey.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 40, vertical: 12),
-                                child: Center(
-                                  child: Text(
-                                    'Continue',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.grey.withOpacity(0.3),
-                                          blurRadius: 6,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ).animate().fadeIn(duration: 600.ms).scale(),
-                      ),
                     ),
                   ],
                 ),
@@ -483,27 +362,15 @@ class _DateSelectionPageState extends State<DateSelectionPage>
     );
   }
 
-  // Fungsi untuk mendapatkan nama bulan
   String _getMonthName(int month) {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
     ];
     return months[month - 1];
   }
 }
 
-// Custom Clipper untuk efek wave (diambil dari DashboardPage)
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

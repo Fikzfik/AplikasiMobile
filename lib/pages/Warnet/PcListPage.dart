@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/main.dart';
-import 'package:fikzuas/pages/Warnet/WarnetSelectionPage.dart';
 import 'package:fikzuas/pages/Warnet/DateSelectionPage.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PcListPage extends StatefulWidget {
   final String warnetName;
+  final int warnetId;
 
-  const PcListPage({Key? key, required this.warnetName, required warnetId}) : super(key: key);
+  const PcListPage({Key? key, required this.warnetName, required this.warnetId}) : super(key: key);
 
   @override
   _PcListPageState createState() => _PcListPageState();
 }
 
-class _PcListPageState extends State<PcListPage>
-    with SingleTickerProviderStateMixin {
-  int? selectedPcIndex; // Menyimpan indeks PC yang dipilih
+class _PcListPageState extends State<PcListPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  List<Map<String, dynamic>> pcs = [];
 
   @override
   void initState() {
@@ -44,17 +45,27 @@ class _PcListPageState extends State<PcListPage>
     super.dispose();
   }
 
+  Future<List<Map<String, dynamic>>> fetchPcs(int warnetId) async {
+    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/pcs?warnet_id=$warnetId'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((item) => {
+        "id_pc": item['id_pc'],
+        "pc_name": item['pc_name'],
+      }).toList();
+    } else {
+      throw Exception('Failed to fetch PCs');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isDark = Provider.of<ThemeProvider>(context).isDark;
-    final pcSlots =
-        Provider.of<BookingState>(context).warnetPcSlots[widget.warnetName]!;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Latar belakang dengan efek wave clipper
           Positioned(
             top: 0,
             left: 0,
@@ -67,14 +78,8 @@ class _PcListPageState extends State<PcListPage>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
-                          ? [
-                              Color(0xFF2C2F50),
-                              Color(0xFF1A1D40).withOpacity(0.9),
-                            ]
-                          : [
-                              Color(0xFF3A3D60),
-                              Color(0xFF2C2F50).withOpacity(0.85),
-                            ],
+                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
+                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0.0, 1.0],
@@ -87,336 +92,211 @@ class _PcListPageState extends State<PcListPage>
           SafeArea(
             child: SingleChildScrollView(
               physics: BouncingScrollPhysics(),
-              child: Consumer<BookingState>(
-                builder: (context, bookingState, child) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // AppBar Custom
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.arrow_back,
-                                color: Colors.white70,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.grey.withOpacity(0.3),
-                                    blurRadius: 6,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: Colors.white70,
+                            shadows: [
+                              Shadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
                               ),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            FadeTransition(
-                              opacity: _fadeAnimation,
-                              child: Text(
-                                '${widget.warnetName}',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.grey.withOpacity(0.4),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.calendar_today,
-                                color: Colors.white70,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.grey.withOpacity(0.3),
-                                    blurRadius: 6,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              onPressed: () {},
-                            ),
-                          ],
+                            ],
+                          ),
+                          onPressed: () => Navigator.pop(context),
                         ),
-                        SizedBox(height: 16),
-                        // Header Elegan
                         FadeTransition(
                           opacity: _fadeAnimation,
-                          child: Container(
-                            margin: EdgeInsets.symmetric(vertical: 10),
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.black.withOpacity(0.2),
-                                  Colors.black.withOpacity(0.1),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
+                          child: Text(
+                            '${widget.warnetName}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.grey.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
                                 ),
                               ],
                             ),
-                            child: Text(
-                              'Choose Your PC',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.grey.withOpacity(0.3),
-                                    blurRadius: 6,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
                         ),
-                        SizedBox(height: 16),
-                        // Legenda
-                        ScaleTransition(
-                          scale: _scaleAnimation,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildLegendItem(Colors.white, 'Available'),
-                              const SizedBox(width: 16),
-                              _buildLegendItem(Colors.red[300]!, 'Reserved'),
-                              const SizedBox(width: 16),
-                              _buildLegendItem(Colors.amberAccent, 'Selected'),
+                        IconButton(
+                          icon: Icon(
+                            Icons.calendar_today,
+                            color: Colors.white70,
+                            shadows: [
+                              Shadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Container(
+                        margin: EdgeInsets.symmetric(vertical: 10),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'Choose Your PC',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                            shadows: [
+                              Shadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
                             ],
                           ),
                         ),
-                        SizedBox(height: 24),
-                        // Grid PC dengan Efek Hover
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.9,
-                          ),
-                          itemCount: pcSlots.length,
-                          itemBuilder: (context, index) {
-                            final pcNumber = index + 1;
-                            final isAvailable = pcSlots[index];
-                            final isSelected = selectedPcIndex == index;
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildLegendItem(Colors.white, 'Available'),
+                          const SizedBox(width: 16),
+                          _buildLegendItem(Colors.red[300]!, 'Reserved'),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    FutureBuilder<List<Map<String, dynamic>>>(
+                      future: fetchPcs(widget.warnetId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return Center(child: Text('No PCs available'));
+                        } else {
+                          pcs = snapshot.data!;
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.9,
+                            ),
+                            itemCount: pcs.length,
+                            itemBuilder: (context, index) {
+                              final pc = pcs[index];
+                              final pcId = pc['id_pc'] as int;
+                              final pcName = pc['pc_name'] as String;
+                              final isAvailable = true; // Ganti dengan logika ketersediaan dari API
 
-                            return GestureDetector(
-                              onTap: isAvailable
-                                  ? () {
-                                      setState(() {
-                                        selectedPcIndex =
-                                            isSelected ? null : index;
-                                      });
-                                    }
-                                  : null,
-                              child: AnimatedContainer(
-                                duration: Duration(milliseconds: 300),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isSelected
-                                        ? [Colors.amberAccent, Colors.amber]
-                                        : (isAvailable
-                                            ? [Colors.white, Colors.grey[200]!]
-                                            : [
-                                                Colors.red[300]!,
-                                                Colors.red[400]!
-                                              ]),
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: isSelected
-                                      ? Border.all(
-                                          color: Colors.amberAccent
-                                              .withOpacity(0.7),
-                                          width: 2,
-                                        )
-                                      : null,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isSelected
-                                          ? Colors.amber.withOpacity(0.5)
-                                          : (isAvailable
-                                              ? Colors.grey.withOpacity(0.3)
-                                              : Colors.red.withOpacity(0.3)),
-                                      blurRadius: isSelected ? 12 : 8,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.computer,
-                                      color: isSelected
-                                          ? Colors.black87
-                                          : (isAvailable
-                                              ? Colors.black54
-                                              : Colors.white),
-                                      size: 28,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'PC $pcNumber',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 12,
-                                        color: isSelected
-                                            ? Colors.black87
-                                            : (isAvailable
-                                                ? Colors.black54
-                                                : Colors.white),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                                  .animate()
-                                  .fadeIn(duration: 500.ms + (index * 40).ms)
-                                  .scale(),
-                            );
-                          },
-                        ),
-                        SizedBox(height: 24),
-                        // Tombol dengan Efek Gradasi Bergerak
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            child: AnimatedContainer(
-                              duration: Duration(milliseconds: 500),
-                              child: ElevatedButton(
-                                onPressed: selectedPcIndex != null
+                              return GestureDetector(
+                                onTap: isAvailable
                                     ? () {
-                                        final pcNumber = selectedPcIndex! + 1;
-                                        bookingState.bookSlot(
-                                            widget.warnetName, pcNumber);
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'PC $pcNumber reserved! Select a date.',
-                                              style: TextStyle(
-                                                  fontFamily: 'Poppins'),
-                                            ),
-                                            backgroundColor: Colors.green[700],
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        );
-                                        // Navigasi ke halaman pemilihan tanggal
+                                        // Langsung navigasi ke DateSelectionPage saat PC dipilih
+                                        final pcNumber = index + 1;
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                DateSelectionPage(
+                                            builder: (context) => DateSelectionPage(
                                               warnetName: widget.warnetName,
                                               pcNumber: pcNumber,
-                                              pcId: null,
+                                              warnetId: widget.warnetId,
+                                              pcId: pcId,
                                             ),
                                           ),
                                         );
-                                        setState(() {
-                                          selectedPcIndex =
-                                              null; // Reset setelah booking
-                                        });
                                       }
                                     : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                ),
-                                child: Ink(
+                                child: AnimatedContainer(
+                                  duration: Duration(milliseconds: 300),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: selectedPcIndex != null
-                                          ? [
-                                              Colors.purpleAccent,
-                                              Colors.blueAccent
-                                            ]
-                                          : [
-                                              Colors.grey[600]!,
-                                              Colors.grey[700]!
-                                            ],
+                                      colors: isAvailable
+                                          ? [Colors.white, Colors.grey[200]!]
+                                          : [Colors.red[300]!, Colors.red[400]!],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
-                                    borderRadius: BorderRadius.circular(25),
+                                    borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: selectedPcIndex != null
-                                            ? Colors.purpleAccent
-                                                .withOpacity(0.4)
-                                            : Colors.grey.withOpacity(0.3),
-                                        blurRadius: 10,
+                                        color: isAvailable ? Colors.grey.withOpacity(0.3) : Colors.red.withOpacity(0.3),
+                                        blurRadius: 8,
                                         offset: Offset(0, 4),
                                       ),
                                     ],
                                   ),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 40, vertical: 12),
-                                    child: Center(
-                                      child: Text(
-                                        'Reserve PC',
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.computer,
+                                        color: isAvailable ? Colors.black54 : Colors.white,
+                                        size: 28,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        pcName,
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          shadows: [
-                                            Shadow(
-                                              color:
-                                                  Colors.grey.withOpacity(0.3),
-                                              blurRadius: 6,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
+                                          fontSize: 12,
+                                          color: isAvailable ? Colors.black54 : Colors.white,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                            ).animate().fadeIn(duration: 600.ms).scale(),
-                          ),
-                        ),
-                      ],
+                                ).animate().fadeIn(duration: 500.ms + (index * 40).ms).scale(),
+                              );
+                            },
+                          );
+                        }
+                      },
                     ),
-                  );
-                },
+                    SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
@@ -425,7 +305,6 @@ class _PcListPageState extends State<PcListPage>
     );
   }
 
-  // Widget untuk legenda
   Widget _buildLegendItem(Color color, String label) {
     return Row(
       children: [
@@ -465,7 +344,6 @@ class _PcListPageState extends State<PcListPage>
   }
 }
 
-// Custom Clipper untuk efek wave (diambil dari DashboardPage)
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

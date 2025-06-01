@@ -29,9 +29,25 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
         if (data['success']) {
           final prefs = await SharedPreferences.getInstance();
+          // Simpan token
           await prefs.setString('token', data['token']);
+          // Simpan data pengguna lengkap
           await prefs.setString('user', jsonEncode(data['user']));
-          print('Login sukses: ${data['user']['name']}');
+          // Simpan id_user secara terpisah untuk akses cepat
+          await prefs.setInt('id_user', data['user']['id']);
+          print('Login sukses: ${data['user']['name']} dengan ID: ${data['user']['id']}');
+
+          // Simpan status Remember Me jika diaktifkan
+          if (_rememberMe) {
+            await prefs.setBool('remember_me', true);
+            await prefs.setString('last_email', email);
+            await prefs.setString('last_password', password); // Catatan: Simpan password dengan aman jika diperlukan
+          } else {
+            await prefs.remove('remember_me');
+            await prefs.remove('last_email');
+            await prefs.remove('last_password');
+          }
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomePage()),
@@ -65,6 +81,30 @@ class _LoginPageState extends State<LoginPage> {
         );
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('remember_me') ?? false;
+      if (_rememberMe) {
+        _emailController.text = prefs.getString('last_email') ?? '';
+        _passwordController.text = prefs.getString('last_password') ?? '';
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
