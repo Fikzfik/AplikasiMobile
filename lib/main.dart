@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:fikzuas/pages/Warnet/WarnetSelectionPage.dart';
 import 'package:fikzuas/pages/PS/PsSelectionPage.dart';
 import 'package:fikzuas/pages/TopUp/TopUpGameSelectionPage.dart';
-import 'package:flutter/material.dart';
-import 'package:fikzuas/pages/Warnet/WarnetSelectionPage.dart';
 import 'package:fikzuas/pages/HomePage.dart';
 import 'package:fikzuas/pages/JasaJokiPage.dart';
 import 'package:fikzuas/pages/RegisterPage.dart';
@@ -11,7 +13,7 @@ import 'package:fikzuas/pages/PS/PsRentalState.dart';
 import 'package:fikzuas/pages/PS/PsDateSelectionPage.dart';
 import 'package:fikzuas/pages/TopUpPage.dart';
 import 'package:fikzuas/pages/SettingsPage.dart';
-import 'package:provider/provider.dart';
+import 'package:fikzuas/pages/HistoryPage.dart'; // Import HistoryPage
 
 class ThemeProvider with ChangeNotifier {
   bool _isDark = true;
@@ -56,7 +58,7 @@ class MyApp extends StatelessWidget {
           bodyLarge: TextStyle(fontFamily: 'Poppins', fontSize: 16),
           bodyMedium: TextStyle(fontFamily: 'Poppins', fontSize: 14),
         ),
-        cardTheme:  CardTheme(
+        cardTheme: CardTheme(
           elevation: 5,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         ),
@@ -74,7 +76,7 @@ class MyApp extends StatelessWidget {
           bodyLarge: TextStyle(fontFamily: 'Poppins', fontSize: 16),
           bodyMedium: TextStyle(fontFamily: 'Poppins', fontSize: 14),
         ),
-        cardTheme:  CardTheme(
+        cardTheme: CardTheme(
           elevation: 5,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         ),
@@ -86,12 +88,16 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/design': (context) => Designpage(),
-        '/warnet_selection': (context) => WarnetSelectionPage(), // Add this route
+        '/warnet_selection': (context) => WarnetSelectionPage(),
         '/sewaps': (context) => PsSelectionPage(),
         '/topup': (context) => TopUpGameSelectionPage(),
         '/joki': (context) => JasaJokiPage(),
         '/settings': (context) => SettingsPage(),
         '/logout': (context) => LoginPage(),
+        '/history': (context) => HistoryPage(
+              refreshOnLoad: ModalRoute.of(context)!.settings.arguments != null &&
+                  (ModalRoute.of(context)!.settings.arguments as Map)['refreshOnLoad'] == true,
+            ),
       },
     );
   }
