@@ -33,7 +33,7 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
     {
       "name": "Top Up",
       "icon": Icons.account_balance_wallet,
-      "transaction_type": "top_up",
+      "transaction_type": "topup",
       "items": <Map<String, dynamic>>[],
     },
     {
@@ -45,7 +45,7 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
     {
       "name": "Sewa PS",
       "icon": Icons.videogame_asset,
-      "transaction_type": "sewa_ps",
+      "transaction_type": "console_booking",
       "items": <Map<String, dynamic>>[],
     },
   ];
@@ -110,24 +110,20 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
-          // Inisialisasi historyCategories dengan kategori default
           historyCategories = List<Map<String, dynamic>>.from(defaultCategories);
 
-          // Ambil semua transaksi dari API
           List<dynamic> transactions = data['data'] is List ? data['data'] : [];
 
-          // Kelompokkan transaksi berdasarkan transaction_type
           for (var transaction in transactions) {
             String? transactionType = transaction['transaction_type'];
             Map<String, dynamic> item = {
               'title': transaction['title'] ?? 'Unknown Transaction',
               'amount': transaction['amount'] ?? 'Rp 0',
-              'date': transaction['date'] ?? 'Unknown Date',
+              'date': transaction['date'] ?? 'Invalid Date',
               'details': transaction['details'] ?? 'No details available',
               'transactionId': transaction['transactionId'] ?? 'Unknown ID',
             };
 
-            // Cari kategori yang sesuai berdasarkan transaction_type
             for (var category in historyCategories) {
               if (category['transaction_type'] == transactionType) {
                 category['items'].add(item);
@@ -172,11 +168,12 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
   void _sortItems(List<Map<String, dynamic>> items) {
     final dateFormat = DateFormat('dd MMM yyyy');
     try {
-      if (_sortOption == "Newest First") {
-        items.sort((a, b) => dateFormat.parse(b["date"]).compareTo(dateFormat.parse(a["date"])));
-      } else {
-        items.sort((a, b) => dateFormat.parse(a["date"]).compareTo(dateFormat.parse(b["date"])));
-      }
+      items.sort((a, b) {
+        if (a['date'] == 'Invalid Date' || b['date'] == 'Invalid Date') {
+          return 0; // Keep invalid dates at the end or unchanged
+        }
+        return dateFormat.parse(b['date']).compareTo(dateFormat.parse(a['date']));
+      });
     } catch (e) {
       debugPrint("Error sorting items: $e");
     }
@@ -261,7 +258,8 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
               gradient: LinearGradient(
                 colors: isDark
                     ? [Colors.purple[700]!, Colors.deepPurple[400]!]
-                    : [Colors.blue[300]!, Colors.purple[200]!],
+                    : [Colors.blue[300]!, Colors.purple[200]!]
+                ,
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),

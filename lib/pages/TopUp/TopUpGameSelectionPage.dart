@@ -1,9 +1,8 @@
+import 'package:fikzuas/pages/TopUp/TopUpDetailPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'TopUpDetailPage.dart'; // Import the next page
 
 class TopUpGameSelectionPage extends StatelessWidget {
-  // Game list
   final List<Map<String, dynamic>> games = [
     {"name": "Mobile Legends", "image": "assets/img/ml.jpg"},
     {"name": "League of Legends", "image": "assets/img/lol.jpg"},
@@ -44,7 +43,6 @@ class TopUpGameSelectionPage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Colorful wave background with gradient
           Positioned(
             top: 0,
             left: 0,
@@ -57,18 +55,11 @@ class TopUpGameSelectionPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
-                          ? [
-                              const Color(0xFF8B5CF6), // Vibrant purple
-                              const Color(0xFFEC4899), // Vibrant pink
-                              const Color(0xFF1A1D40).withOpacity(0.9),
-                            ]
-                          : [
-                              const Color(0xFF34D399), // Bright green
-                              const Color(0xFF60A5FA), // Bright blue
-                              const Color(0xFF2C2F50).withOpacity(0.85),
-                            ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
+                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.0, 1.0],
                     ),
                   ),
                 ),
@@ -208,15 +199,14 @@ class TopUpGameSelectionPage extends StatelessWidget {
   }
 }
 
-// Custom Clipper for a more dynamic wave effect
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     var path = Path();
-    path.lineTo(0, size.height - 120);
+    path.lineTo(0, size.height - 100);
 
-    var firstControlPoint = Offset(size.width / 6, size.height);
-    var firstEndPoint = Offset(size.width / 3, size.height - 80);
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2, size.height - 50);
     path.quadraticBezierTo(
       firstControlPoint.dx,
       firstControlPoint.dy,
@@ -224,22 +214,13 @@ class WaveClipper extends CustomClipper<Path> {
       firstEndPoint.dy,
     );
 
-    var secondControlPoint = Offset(size.width / 2, size.height - 200);
-    var secondEndPoint = Offset(2 * size.width / 3, size.height - 60);
+    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
+    var secondEndPoint = Offset(size.width, size.height - 100);
     path.quadraticBezierTo(
       secondControlPoint.dx,
       secondControlPoint.dy,
       secondEndPoint.dx,
       secondEndPoint.dy,
-    );
-
-    var thirdControlPoint = Offset(5 * size.width / 6, size.height - 150);
-    var thirdEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      thirdControlPoint.dx,
-      thirdControlPoint.dy,
-      thirdEndPoint.dx,
-      thirdEndPoint.dy,
     );
 
     path.lineTo(size.width, 0);

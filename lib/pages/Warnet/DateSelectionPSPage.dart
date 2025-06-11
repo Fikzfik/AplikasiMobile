@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart'; // Added for Consumer
-import 'PsTimeSelectionPage.dart';
-import 'PsRentalState.dart'; // Ensure this import is correct
+import 'package:fikzuas/pages/Warnet/TimeSelectionPSPage.dart';
 
-class PsDateSelectionPage extends StatefulWidget {
-  final String psLocation;
-  final int unitNumber;
+class DateSelectionPSPage extends StatefulWidget {
+  final String warnetName;
+  final int psNumber;
+  final int warnetId;
+  final int? psId;
 
-  const PsDateSelectionPage({
+  const DateSelectionPSPage({
     Key? key,
-    required this.psLocation,
-    required this.unitNumber,
+    required this.warnetName,
+    required this.psNumber,
+    required this.warnetId,
+    required this.psId,
   }) : super(key: key);
 
   @override
-  _PsDateSelectionPageState createState() => _PsDateSelectionPageState();
+  _DateSelectionPageState createState() => _DateSelectionPageState();
 }
 
-class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTickerProviderStateMixin {
+class _DateSelectionPageState extends State<DateSelectionPSPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -54,7 +56,7 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
   }
 
   int _firstDayOffset(DateTime date) {
-    return DateTime(date.year, date.month, 1).weekday % 7; // Minggu = 0
+    return DateTime(date.year, date.month, 1).weekday % 7;
   }
 
   @override
@@ -62,7 +64,9 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
     final screenHeight = MediaQuery.of(context).size.height;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    const List<String> daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const List<String> daysOfWeek = [
+      'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+    ];
 
     final daysInMonth = _daysInMonth(_currentMonth);
     final firstDayOffset = _firstDayOffset(_currentMonth);
@@ -83,14 +87,8 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
-                          ? [
-                              Color(0xFF2C2F50),
-                              Color(0xFF1A1D40).withOpacity(0.9),
-                            ]
-                          : [
-                              Color(0xFF3A3D60),
-                              Color(0xFF2C2F50).withOpacity(0.85),
-                            ],
+                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
+                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0.0, 1.0],
@@ -155,10 +153,7 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Colors.black.withOpacity(0.2),
-                              Colors.black.withOpacity(0.1),
-                            ],
+                            colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.1)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -172,7 +167,7 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                           ],
                         ),
                         child: Text(
-                          'Booking PS ${widget.unitNumber} at ${widget.psLocation}',
+                          'Booking PS ${widget.psNumber} at ${widget.warnetName}',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 18,
@@ -202,11 +197,7 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                           ),
                           onPressed: () {
                             setState(() {
-                              _currentMonth = DateTime(
-                                _currentMonth.year,
-                                _currentMonth.month - 1,
-                                1,
-                              );
+                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
                               selectedDate = null;
                             });
                           },
@@ -235,11 +226,7 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                           ),
                           onPressed: () {
                             setState(() {
-                              _currentMonth = DateTime(
-                                _currentMonth.year,
-                                _currentMonth.month + 1,
-                                1,
-                              );
+                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
                               selectedDate = null;
                             });
                           },
@@ -307,6 +294,18 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                                   setState(() {
                                     selectedDate = date;
                                   });
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TimeSelectionPSPage(
+                                        warnetName: widget.warnetName,
+                                        psNumber: widget.psNumber,
+                                        selectedDate: date,
+                                        warnetId: widget.warnetId,
+                                        psId: widget.psId,
+                                      ),
+                                    ),
+                                  );
                                 },
                           child: AnimatedContainer(
                             duration: Duration(milliseconds: 300),
@@ -324,18 +323,13 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                                 end: Alignment.bottomRight,
                               ),
                               border: isSelected
-                                  ? Border.all(
-                                      color: Colors.amberAccent.withOpacity(0.7),
-                                      width: 2,
-                                    )
+                                  ? Border.all(color: Colors.amberAccent.withOpacity(0.7), width: 2)
                                   : null,
                               boxShadow: [
                                 BoxShadow(
                                   color: isSelected
                                       ? Colors.amber.withOpacity(0.5)
-                                      : (isToday
-                                          ? Colors.blue.withOpacity(0.3)
-                                          : Colors.grey.withOpacity(0.2)),
+                                      : (isToday ? Colors.blue.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
                                   blurRadius: isSelected ? 10 : 6,
                                   offset: Offset(0, 2),
                                 ),
@@ -360,85 +354,6 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
                         );
                       },
                     ),
-                    SizedBox(height: 24),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        child: Consumer<PsRentalState>( // Added Consumer to access PsRentalState
-                          builder: (context, rentalState, child) {
-                            return AnimatedContainer(
-                              duration: Duration(milliseconds: 500),
-                              child: ElevatedButton(
-                                onPressed: selectedDate != null
-                                    ? () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => PsTimeSelectionPage(
-                                              psLocation: widget.psLocation,
-                                              unitNumber: widget.unitNumber,
-                                              selectedDate: selectedDate!,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                ),
-                                child: Ink(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: selectedDate != null
-                                          ? [Colors.purpleAccent, Colors.blueAccent]
-                                          : [Colors.grey[600]!, Colors.grey[700]!],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(25),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: selectedDate != null
-                                            ? Colors.purpleAccent.withOpacity(0.4)
-                                            : Colors.grey.withOpacity(0.3),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                                    child: Center(
-                                      child: Text(
-                                        'Continue',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.grey.withOpacity(0.3),
-                                              blurRadius: 6,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ).animate().fadeIn(duration: 600.ms).scale();
-                          },
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -451,18 +366,8 @@ class _PsDateSelectionPageState extends State<PsDateSelectionPage> with SingleTi
 
   String _getMonthName(int month) {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
     ];
     return months[month - 1];
   }
@@ -473,6 +378,7 @@ class WaveClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     var path = Path();
     path.lineTo(0, size.height - 100);
+
     var firstControlPoint = Offset(size.width / 4, size.height);
     var firstEndPoint = Offset(size.width / 2, size.height - 50);
     path.quadraticBezierTo(
@@ -481,6 +387,7 @@ class WaveClipper extends CustomClipper<Path> {
       firstEndPoint.dx,
       firstEndPoint.dy,
     );
+
     var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
     var secondEndPoint = Offset(size.width, size.height - 100);
     path.quadraticBezierTo(
@@ -489,6 +396,7 @@ class WaveClipper extends CustomClipper<Path> {
       secondEndPoint.dx,
       secondEndPoint.dy,
     );
+
     path.lineTo(size.width, 0);
     path.close();
     return path;

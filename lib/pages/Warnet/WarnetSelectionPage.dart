@@ -1,3 +1,4 @@
+import 'package:fikzuas/booking_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/pages/Warnet/PcListPage.dart';
@@ -5,24 +6,7 @@ import 'package:fikzuas/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class BookingState with ChangeNotifier {
-  Map<String, List<bool>> warnetPcSlots = {};
 
-  void initializeSlots(String warnetName, int totalPcs) {
-    if (!warnetPcSlots.containsKey(warnetName)) {
-      warnetPcSlots[warnetName] = List<bool>.filled(totalPcs, true);
-    }
-  }
-
-  void bookSlot(String warnetName, int index) {
-    warnetPcSlots[warnetName]![index - 1] = false;
-    notifyListeners();
-  }
-
-  int getAvailableSlots(String warnetName) {
-    return warnetPcSlots[warnetName]!.where((slot) => slot).length;
-  }
-}
 
 class WarnetSelectionPage extends StatelessWidget {
   Future<List<Map<String, dynamic>>> fetchWarnetData() async {
@@ -189,7 +173,7 @@ class WarnetSelectionPage extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => ChangeNotifierProvider(
               create: (_) => BookingState()
-                ..initializeSlots(warnet["name"], warnet["availablePcs"]),
+                ..initializePcSlots(warnet["name"], warnet["availablePcs"]),
               child: PcListPage(
                 warnetName: warnet["name"],
                 warnetId: warnet["id"], // Kirim id_warnet
