@@ -8,7 +8,9 @@ class TopUpDetailsPage extends StatefulWidget {
   final String gameName;
   final String gameImage;
 
-  const TopUpDetailsPage({Key? key, required this.gameName, required this.gameImage}) : super(key: key);
+  const TopUpDetailsPage(
+      {Key? key, required this.gameName, required this.gameImage})
+      : super(key: key);
 
   @override
   _TopUpDetailsPageState createState() => _TopUpDetailsPageState();
@@ -88,7 +90,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
           userName = "Failed to Load: ${response.statusCode}";
           userBalance = 0;
         });
-        print('Failed to load user data. Status: ${response.statusCode}, Body: ${response.body}');
+        print(
+            'Failed to load user data. Status: ${response.statusCode}, Body: ${response.body}');
       }
     } catch (e) {
       setState(() {
@@ -100,14 +103,19 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
   }
 
   Future<void> _performTopUp() async {
-    if (!formKey.currentState!.validate() || selectedTopUpOption == null || selectedPaymentMethod == null) {
+    if (!formKey.currentState!.validate() ||
+        selectedTopUpOption == null ||
+        selectedPaymentMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields and select a top-up amount and payment method")),
+        const SnackBar(
+            content: Text(
+                "Please fill all fields and select a top-up amount and payment method")),
       );
       return;
     }
 
-    final selectedOption = topUpOptions.firstWhere((option) => option["diamonds"] == selectedTopUpOption);
+    final selectedOption = topUpOptions
+        .firstWhere((option) => option["diamonds"] == selectedTopUpOption);
     final amount = selectedOption["price"];
 
     if (selectedPaymentMethod == "Saldo" && userBalance < amount) {
@@ -166,10 +174,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
 
     // Determine if Saldo is disabled based on selected amount and balance
     final selectedOption = selectedTopUpOption != null
-        ? topUpOptions.firstWhere((option) => option["diamonds"] == selectedTopUpOption)
+        ? topUpOptions
+            .firstWhere((option) => option["diamonds"] == selectedTopUpOption)
         : null;
-    final isSaldoDisabled = selectedOption != null && selectedPaymentMethod == "Saldo" && userBalance < selectedOption["price"];
-
+    final isSaldoDisabled =
+        selectedOption != null && userBalance < selectedOption["price"];
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1D40),
@@ -202,8 +211,14 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
-                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
+                          ? [
+                              Color(0xFF2C2F50),
+                              Color(0xFF1A1D40).withOpacity(0.9)
+                            ]
+                          : [
+                              Color(0xFF3A3D60),
+                              Color(0xFF2C2F50).withOpacity(0.85)
+                            ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0.0, 1.0],
@@ -230,7 +245,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           height: 60,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              Container(color: Colors.grey, width: 60, height: 60),
+                              Container(
+                                  color: Colors.grey, width: 60, height: 60),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -266,7 +282,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.help_outline, color: Colors.blueAccent),
+                        icon: const Icon(Icons.help_outline,
+                            color: Colors.blueAccent),
                         onPressed: () {
                           showDialog(
                             context: context,
@@ -298,16 +315,19 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           decoration: InputDecoration(
                             labelText: "Masukkan User ID",
                             labelStyle: const TextStyle(fontFamily: "Poppins"),
-                            prefixIcon: const Icon(Icons.person, color: Colors.blueAccent),
+                            prefixIcon: const Icon(Icons.person,
+                                color: Colors.blueAccent),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.blueAccent, width: 2),
                             ),
                             filled: true,
-                            fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[100],
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -323,16 +343,19 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           decoration: InputDecoration(
                             labelText: "Zone ID",
                             labelStyle: const TextStyle(fontFamily: "Poppins"),
-                            prefixIcon: const Icon(Icons.map, color: Colors.blueAccent),
+                            prefixIcon:
+                                const Icon(Icons.map, color: Colors.blueAccent),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.blueAccent, width: 2),
                             ),
                             filled: true,
-                            fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[100],
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -358,7 +381,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.trending_up, color: Colors.redAccent, size: 16),
+                      const Icon(Icons.trending_up,
+                          color: Colors.redAccent, size: 16),
                       const SizedBox(width: 8),
                       Text(
                         "22,751 item dibeli dalam satu jam terakhir",
@@ -375,10 +399,22 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Flexible(child: _buildTopUpButton("2x Recharge Bonus", Icons.replay, isDark, onTap: () => setTab("2x Recharge Bonus"))),
-                      Flexible(child: _buildTopUpButton("Diamond", Icons.diamond, isDark, onTap: () => setTab("Diamond"))),
-                      Flexible(child: _buildTopUpButton("Twilight Pass", Icons.star, isDark, onTap: () => setTab("Twilight Pass"))),
-                      Flexible(child: _buildTopUpButton("Weekly Diamond", Icons.calendar_today, isDark, onTap: () => setTab("Weekly Diamond"))),
+                      Flexible(
+                          child: _buildTopUpButton(
+                              "2x Recharge Bonus", Icons.replay, isDark,
+                              onTap: () => setTab("2x Recharge Bonus"))),
+                      Flexible(
+                          child: _buildTopUpButton(
+                              "Diamond", Icons.diamond, isDark,
+                              onTap: () => setTab("Diamond"))),
+                      Flexible(
+                          child: _buildTopUpButton(
+                              "Twilight Pass", Icons.star, isDark,
+                              onTap: () => setTab("Twilight Pass"))),
+                      Flexible(
+                          child: _buildTopUpButton(
+                              "Weekly Diamond", Icons.calendar_today, isDark,
+                              onTap: () => setTab("Weekly Diamond"))),
                     ],
                   ).animate().slideX(duration: 500.ms, begin: -0.5, end: 0.0),
                   if (selectedTab != null) ...[
@@ -406,7 +442,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
@@ -415,28 +452,43 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                         itemCount: topUpOptions.length,
                         itemBuilder: (context, index) {
                           final option = topUpOptions[index];
-                          final isSelected = selectedTopUpOption == option["diamonds"];
+                          final isSelected =
+                              selectedTopUpOption == option["diamonds"];
                           return GestureDetector(
                             onTap: () {
                               setState(() {
                                 selectedTopUpOption = option["diamonds"];
+                                // Auto-deselect Saldo if balance is insufficient
+                                if (selectedPaymentMethod == "Saldo" &&
+                                    userBalance < option["price"]) {
+                                  selectedPaymentMethod = null;
+                                }
                               });
                             },
                             child: Container(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: isSelected
-                                      ? [const Color(0xFF34D399), const Color(0xFF10B981)]
+                                      ? [
+                                          const Color(0xFF34D399),
+                                          const Color(0xFF10B981)
+                                        ]
                                       : [
-                                          isDark ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB),
-                                          isDark ? const Color(0xFF374151) : const Color(0xFFD1D5DB),
+                                          isDark
+                                              ? const Color(0xFF4B5563)
+                                              : const Color(0xFFE5E7EB),
+                                          isDark
+                                              ? const Color(0xFF374151)
+                                              : const Color(0xFFD1D5DB),
                                         ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF10B981) : Colors.transparent,
+                                  color: isSelected
+                                      ? const Color(0xFF10B981)
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                                 boxShadow: [
@@ -455,7 +507,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     style: TextStyle(
                                       fontFamily: "Poppins",
                                       fontSize: 12,
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color:
+                                          isDark ? Colors.white : Colors.black,
                                       fontWeight: FontWeight.bold,
                                     ),
                                     textAlign: TextAlign.center,
@@ -466,7 +519,9 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     style: TextStyle(
                                       fontFamily: "Poppins",
                                       fontSize: 10,
-                                      color: isDark ? Colors.white70 : Colors.black54,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -477,8 +532,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                         'assets/images/dia.png',
                                         width: 12,
                                         height: 12,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            const Icon(Icons.diamond, color: Colors.blueAccent, size: 12),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.diamond,
+                                                    color: Colors.blueAccent,
+                                                    size: 12),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -499,8 +557,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                         'assets/images/dia.png',
                                         width: 12,
                                         height: 12,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            const Icon(Icons.diamond, color: Colors.orangeAccent, size: 12),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.diamond,
+                                                    color: Colors.orangeAccent,
+                                                    size: 12),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -508,17 +569,23 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                         style: TextStyle(
                                           fontFamily: "Poppins",
                                           fontSize: 10,
-                                          color: isDark ? Colors.white70 : Colors.black54,
+                                          color: isDark
+                                              ? Colors.white70
+                                              : Colors.black54,
                                         ),
                                       ),
                                     ],
                                   ),
                                   if (index < 4)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4),
                                       decoration: BoxDecoration(
                                         gradient: const LinearGradient(
-                                          colors: [Colors.redAccent, Colors.red],
+                                          colors: [
+                                            Colors.redAccent,
+                                            Colors.red
+                                          ],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
@@ -535,7 +602,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     ),
                                 ],
                               ),
-                            ).animate().scale(duration: 500.ms, delay: (index * 100).ms).shimmer(
+                            )
+                                .animate()
+                                .scale(
+                                    duration: 500.ms, delay: (index * 100).ms)
+                                .shimmer(
                                   duration: 1200.ms,
                                   color: Colors.white.withOpacity(0.3),
                                 ),
@@ -566,7 +637,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
@@ -575,7 +647,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                         itemCount: topUpOptions.length,
                         itemBuilder: (context, index) {
                           final option = topUpOptions[index];
-                          final isSelected = selectedTopUpOption == option["diamonds"];
+                          final isSelected =
+                              selectedTopUpOption == option["diamonds"];
                           return GestureDetector(
                             onTap: () {
                               setState(() {
@@ -586,17 +659,26 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: isSelected
-                                      ? [const Color(0xFF34D399), const Color(0xFF10B981)]
+                                      ? [
+                                          const Color(0xFF34D399),
+                                          const Color(0xFF10B981)
+                                        ]
                                       : [
-                                          isDark ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB),
-                                          isDark ? const Color(0xFF374151) : const Color(0xFFD1D5DB),
+                                          isDark
+                                              ? const Color(0xFF4B5563)
+                                              : const Color(0xFFE5E7EB),
+                                          isDark
+                                              ? const Color(0xFF374151)
+                                              : const Color(0xFFD1D5DB),
                                         ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF10B981) : Colors.transparent,
+                                  color: isSelected
+                                      ? const Color(0xFF10B981)
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                                 boxShadow: [
@@ -615,7 +697,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     style: TextStyle(
                                       fontFamily: "Poppins",
                                       fontSize: 12,
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color:
+                                          isDark ? Colors.white : Colors.black,
                                       fontWeight: FontWeight.bold,
                                     ),
                                     textAlign: TextAlign.center,
@@ -626,7 +709,9 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     style: TextStyle(
                                       fontFamily: "Poppins",
                                       fontSize: 10,
-                                      color: isDark ? Colors.white70 : Colors.black54,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -637,8 +722,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                         'assets/images/dia.png',
                                         width: 12,
                                         height: 12,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            const Icon(Icons.diamond, color: Colors.blueAccent, size: 12),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.diamond,
+                                                    color: Colors.blueAccent,
+                                                    size: 12),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -659,8 +747,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                         'assets/images/dia.png',
                                         width: 12,
                                         height: 12,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            const Icon(Icons.diamond, color: Colors.orangeAccent, size: 12),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.diamond,
+                                                    color: Colors.orangeAccent,
+                                                    size: 12),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -668,17 +759,23 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                         style: TextStyle(
                                           fontFamily: "Poppins",
                                           fontSize: 10,
-                                          color: isDark ? Colors.white70 : Colors.black54,
+                                          color: isDark
+                                              ? Colors.white70
+                                              : Colors.black54,
                                         ),
                                       ),
                                     ],
                                   ),
                                   if (index < 4)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4),
                                       decoration: BoxDecoration(
                                         gradient: const LinearGradient(
-                                          colors: [Colors.redAccent, Colors.red],
+                                          colors: [
+                                            Colors.redAccent,
+                                            Colors.red
+                                          ],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
@@ -695,7 +792,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     ),
                                 ],
                               ),
-                            ).animate().scale(duration: 500.ms, delay: (index * 100).ms).shimmer(
+                            )
+                                .animate()
+                                .scale(
+                                    duration: 500.ms, delay: (index * 100).ms)
+                                .shimmer(
                                   duration: 1200.ms,
                                   color: Colors.white.withOpacity(0.3),
                                 ),
@@ -726,7 +827,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
@@ -737,7 +839,10 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           return Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [const Color(0xFF6B7280), const Color(0xFF4B5563)],
+                                colors: [
+                                  const Color(0xFF6B7280),
+                                  const Color(0xFF4B5563)
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -780,7 +885,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
@@ -791,7 +897,10 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           return Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [const Color(0xFF6B7280), const Color(0xFF4B5563)],
+                                colors: [
+                                  const Color(0xFF6B7280),
+                                  const Color(0xFF4B5563)
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -852,20 +961,24 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           decoration: InputDecoration(
                             labelText: "Payment Method",
                             labelStyle: const TextStyle(fontFamily: "Poppins"),
-                            prefixIcon: const Icon(Icons.payment, color: Colors.blueAccent),
+                            prefixIcon: const Icon(Icons.payment,
+                                color: Colors.blueAccent),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.blueAccent, width: 2),
                             ),
                             filled: true,
-                            fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[100],
                           ),
                           value: selectedPaymentMethod,
                           items: paymentMethods.map((String method) {
-                            final isDisabled = method == "Saldo" && isSaldoDisabled;
+                            final isDisabled =
+                                method == "Saldo" && isSaldoDisabled;
                             return DropdownMenuItem<String>(
                               value: method,
                               enabled: !isDisabled,
@@ -875,7 +988,11 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                                     method,
                                     style: TextStyle(
                                       fontFamily: "Poppins",
-                                      color: isDisabled ? Colors.grey : (isDark ? Colors.white : Colors.black),
+                                      color: isDisabled
+                                          ? Colors.grey
+                                          : (isDark
+                                              ? Colors.white
+                                              : Colors.black),
                                     ),
                                   ),
                                   if (isDisabled)
@@ -918,10 +1035,12 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ).copyWith(
-                        backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        backgroundColor:
+                            MaterialStateProperty.resolveWith<Color>(
                           (states) => Colors.transparent,
                         ),
-                        foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                        foregroundColor:
+                            MaterialStateProperty.resolveWith<Color>(
                           (states) {
                             if (states.contains(MaterialState.pressed)) {
                               return Colors.white.withOpacity(0.8);
@@ -973,7 +1092,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
     });
   }
 
-  Widget _buildTopUpButton(String label, IconData icon, bool isDark, {VoidCallback? onTap}) {
+  Widget _buildTopUpButton(String label, IconData icon, bool isDark,
+      {VoidCallback? onTap}) {
     final isSelected = selectedTab == label;
     return ElevatedButton(
       onPressed: onTap ?? () {},
@@ -981,7 +1101,9 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
         backgroundColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: isSelected ? Colors.blueAccent : Colors.transparent, width: 2),
+          side: BorderSide(
+              color: isSelected ? Colors.blueAccent : Colors.transparent,
+              width: 2),
         ),
         padding: const EdgeInsets.all(4),
       ).copyWith(
