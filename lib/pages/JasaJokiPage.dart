@@ -100,7 +100,7 @@ class JasaJokiPage extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => JokiFormPage(gameName: game["name"]),
+                              builder: (context) => JokiServicePage(gameName: game["name"]),
                             ),
                           );
                         },

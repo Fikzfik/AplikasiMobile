@@ -1,8 +1,8 @@
+import 'package:fikzuas/FixedStoreApp.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/pages/Warnet/WarnetSelectionPage.dart';
-import 'package:fikzuas/pages/Warnet/WarnetSelectionPSPage.dart'; // Add this
+import 'package:fikzuas/pages/Warnet/WarnetSelectionPSPage.dart';
 import 'package:fikzuas/pages/TopUp/TopUpGameSelectionPage.dart';
 import 'package:fikzuas/pages/HomePage.dart';
 import 'package:fikzuas/pages/JasaJokiPage.dart';
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
         ),
         cardTheme: CardTheme(
           elevation: 5,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
         ),
       ),
       darkTheme: ThemeData(
@@ -74,11 +74,11 @@ class MyApp extends StatelessWidget {
         ),
         cardTheme: CardTheme(
           elevation: 5,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
         ),
       ),
       themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: '/home',
+      initialRoute: '/fixedstore', // 👉 Ini diarahkan ke FixeHomePage
       routes: {
         '/home': (context) => HomePage(),
         '/login': (context) => LoginPage(),
@@ -89,7 +89,8 @@ class MyApp extends StatelessWidget {
         '/joki': (context) => JasaJokiPage(),
         '/settings': (context) => SettingsPage(),
         '/logout': (context) => LoginPage(),
-        '/sewaps': (context) => WarnetSelectionPSPage(), // Add this route
+        '/sewaps': (context) => WarnetSelectionPSPage(),
+        '/fixedstore': (context) => FixedStore(), // 👉 Tambahkan ini
         '/history': (context) => HistoryPage(
               refreshOnLoad: ModalRoute.of(context)!.settings.arguments != null &&
                   (ModalRoute.of(context)!.settings.arguments as Map)['refreshOnLoad'] == true,

@@ -14,7 +14,8 @@ class HistoryPage extends StatefulWidget {
   State<HistoryPage> createState() => HistoryPageState();
 }
 
-class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin {
+class HistoryPageState extends State<HistoryPage>
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late TabController _tabController;
@@ -85,7 +86,8 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
     if (userId == 0 || token == null) {
       setState(() {
         historyCategories = defaultCategories;
-        _tabController = TabController(length: historyCategories.length, vsync: this);
+        _tabController =
+            TabController(length: historyCategories.length, vsync: this);
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,8 +111,10 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('API Response: $data'); // Debug log
         if (data['status'] == 'success') {
-          historyCategories = List<Map<String, dynamic>>.from(defaultCategories);
+          historyCategories =
+              List<Map<String, dynamic>>.from(defaultCategories);
 
           List<dynamic> transactions = data['data'] is List ? data['data'] : [];
 
@@ -123,7 +127,7 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
               'details': transaction['details'] ?? 'No details available',
               'transactionId': transaction['transactionId'] ?? 'Unknown ID',
             };
-
+            print('Processed Item: $item'); // Debug log
             for (var category in historyCategories) {
               if (category['transaction_type'] == transactionType) {
                 category['items'].add(item);
@@ -133,20 +137,23 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
           }
 
           setState(() {
-            _tabController = TabController(length: historyCategories.length, vsync: this);
+            _tabController =
+                TabController(length: historyCategories.length, vsync: this);
             _isLoading = false;
           });
         } else {
           throw Exception('Failed to fetch history: ${data['message']}');
         }
       } else {
-        throw Exception('Failed to fetch history: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to fetch history: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching history: $e');
       setState(() {
         historyCategories = defaultCategories;
-        _tabController = TabController(length: historyCategories.length, vsync: this);
+        _tabController =
+            TabController(length: historyCategories.length, vsync: this);
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -166,17 +173,21 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
   }
 
   void _sortItems(List<Map<String, dynamic>> items) {
-    final dateFormat = DateFormat('dd MMM yyyy');
+    final dateFormat = DateFormat('dd MMM yyyy HH:mm');
     try {
       items.sort((a, b) {
+        // Explicitly define a and b as parameters
         if (a['date'] == 'Invalid Date' || b['date'] == 'Invalid Date') {
-          return 0; // Keep invalid dates at the end or unchanged
+          return 0;
         }
-        return dateFormat.parse(b['date']).compareTo(dateFormat.parse(a['date']));
+        // Parse the start time of the range
+        final aStart = a['date'].split(' to ')[0].trim();
+        final bStart = b['date'].split(' to ')[0].trim();
+        DateTime aDate = dateFormat.parse(aStart);
+        DateTime bDate = dateFormat.parse(bStart);
+        return bDate.compareTo(aDate); // Sort descending (newest first)
       });
-    } catch (e) {
-      debugPrint("Error sorting items: $e");
-    }
+    } catch (e) {}
   }
 
   @override
@@ -258,15 +269,16 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
               gradient: LinearGradient(
                 colors: isDark
                     ? [Colors.purple[700]!, Colors.deepPurple[400]!]
-                    : [Colors.blue[300]!, Colors.purple[200]!]
-                ,
+                    : [Colors.blue[300]!, Colors.purple[200]!],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? Colors.purple[900]!.withOpacity(0.5) : Colors.blue[200]!.withOpacity(0.5),
+                  color: isDark
+                      ? Colors.purple[900]!.withOpacity(0.5)
+                      : Colors.blue[200]!.withOpacity(0.5),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -286,7 +298,9 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(category["icon"], size: 20, color: isDark ? Colors.white70 : Colors.black54),
+                      Icon(category["icon"],
+                          size: 20,
+                          color: isDark ? Colors.white70 : Colors.black54),
                       const SizedBox(width: 4),
                       Text(category["name"]),
                     ],
@@ -302,14 +316,25 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
           : TabBarView(
               controller: _tabController,
               children: historyCategories.map((category) {
-                List<Map<String, dynamic>> sortedItems = List.from(category["items"]);
+                List<Map<String, dynamic>> sortedItems =
+                    List.from(category["items"]);
                 _sortItems(sortedItems);
                 return sortedItems.isEmpty
-                    ? Center(child: Text('No transactions available for ${category["name"]}.'))
+                    ? Center(
+                        child: Text(
+                            'No transactions available for ${category["name"]}.'))
                     : ListView.builder(
                         itemCount: sortedItems.length,
                         itemBuilder: (context, index) {
                           final item = sortedItems[index];
+                          // Debug print statements
+                          print('Item $index:');
+                          print('  Title: ${item["title"]}');
+                          print('  Amount: ${item["amount"]}');
+                          print('  Date: ${item["date"]}');
+                          print('  Details: ${item["details"]}');
+                          print('  Transaction ID: ${item["transactionId"]}');
+                          print('------------------------');
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12.0),
                             child: GestureDetector(
@@ -317,24 +342,35 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
                                 showDialog(
                                   context: context,
                                   builder: (_) => AlertDialog(
-                                    backgroundColor: Theme.of(context).colorScheme.background,
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .background,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     title: Text(
                                       item["title"],
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                            color: isDark ? Colors.white : Colors.black87,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            color: isDark
+                                                ? Colors.white
+                                                : Colors.black87,
                                             fontWeight: FontWeight.bold,
                                           ),
                                     ),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "Amount: ${item["amount"]}",
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
                                                 color: Colors.greenAccent,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -342,22 +378,37 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
                                         const SizedBox(height: 8),
                                         Text(
                                           "Date: ${item["date"]}",
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: isDark ? Colors.white70 : Colors.black54,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? Colors.white70
+                                                    : Colors.black54,
                                               ),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
                                           "Details: ${item["details"]}",
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: isDark ? Colors.white70 : Colors.black54,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? Colors.white70
+                                                    : Colors.black54,
                                               ),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
                                           "Transaction ID: ${item["transactionId"]}",
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: isDark ? Colors.white70 : Colors.black54,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? Colors.white70
+                                                    : Colors.black54,
                                               ),
                                         ),
                                       ],
@@ -367,8 +418,13 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
                                         onPressed: () => Navigator.pop(context),
                                         child: Text(
                                           "Close",
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: isDark ? Colors.white70 : Colors.black54,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? Colors.white70
+                                                    : Colors.black54,
                                               ),
                                         ),
                                       ),
@@ -377,66 +433,99 @@ class HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin 
                                 );
                               },
                               child: Card(
-                                elevation: Theme.of(context).cardTheme.elevation,
+                                elevation:
+                                    Theme.of(context).cardTheme.elevation,
                                 shape: Theme.of(context).cardTheme.shape,
-                                color: isDark ? const Color(0xFF262A50) : Colors.white,
+                                color: isDark
+                                    ? const Color(0xFF262A50)
+                                    : Colors.white,
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         item["title"],
-                                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
                                               fontWeight: FontWeight.bold,
-                                              color: isDark ? Colors.white : Colors.black87,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black87,
                                             ),
-                                      ).animate().fade(
+                                      )
+                                          .animate()
+                                          .fade(
                                             duration: 600.ms,
                                             curve: Curves.easeOut,
-                                          ).scale(
+                                          )
+                                          .scale(
                                             duration: 600.ms,
                                             curve: Curves.easeOut,
                                           ),
                                       const SizedBox(height: 8),
                                       Text(
                                         "Amount: ${item["amount"]}",
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
                                               color: Colors.greenAccent,
-                                              fontWeight: FontWeight.w500,
                                             ),
-                                      ).animate().fade(
+                                      )
+                                          .animate()
+                                          .fade(
                                             duration: 700.ms,
                                             curve: Curves.easeOut,
-                                          ).scale(
+                                          )
+                                          .scale(
                                             duration: 700.ms,
                                             curve: Curves.easeOut,
                                           ),
                                       const SizedBox(height: 8),
                                       Text(
                                         "Date: ${item["date"]}",
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: isDark ? Colors.white70 : Colors.black54,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: isDark
+                                                  ? Colors.white70
+                                                  : Colors.black54,
                                             ),
-                                      ).animate().fade(
+                                      )
+                                          .animate()
+                                          .fade(
                                             duration: 700.ms,
                                             curve: Curves.easeOut,
-                                          ).scale(
+                                          )
+                                          .scale(
                                             duration: 700.ms,
                                             curve: Curves.easeOut,
                                           ),
                                       const SizedBox(height: 8),
                                       Text(
                                         "Details: ${item["details"]}",
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: isDark ? Colors.white70 : Colors.black54,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: isDark
+                                                  ? Colors.white70
+                                                  : Colors.black54,
                                             ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
-                                      ).animate().fade(
+                                      )
+                                          .animate()
+                                          .fade(
                                             duration: 800.ms,
                                             curve: Curves.easeOut,
-                                          ).scale(
+                                          )
+                                          .scale(
                                             duration: 800.ms,
                                             curve: Curves.easeOut,
                                           ),
