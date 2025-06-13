@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/clipper.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:provider/provider.dart';
+import 'package:fikzuas/main.dart';
 import 'package:flutter_swiper_null_safety/flutter_swiper_null_safety.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class CommunityChat extends StatefulWidget {
   @override
@@ -74,15 +76,15 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.easeIn,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     _controller.forward();
   }
@@ -95,406 +97,352 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
 
     return Scaffold(
-      appBar: AppBar(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
-        title: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(250 / 2),
-                  color: Colors.blueGrey,
-                  border: Border.all(
-                    color: isDark ? Colors.white : Colors.black54,
-                    width: 5,
-                  ),
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: NetworkImage("https://picsum.photos/id/798/200/300"),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: buildHeader(context),
+                ),
+                SizedBox(height: 24),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Featured Communities',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
-              ),
-              SizedBox(width: 10),
-              Text(
-                "Welcome, Gamer!",
-                style: TextStyle(
-                  fontFamily: "Poppins",
-                  fontSize: 18,
-                  color: isDark ? Colors.white70 : Colors.black87,
+                SizedBox(height: 12),
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: buildCommunityCarousel(context),
                 ),
-              ),
-            ],
+                SizedBox(height: 24),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Select Categories',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: buildCategoryGrid(context),
+                ),
+                SizedBox(height: 24),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Recent Discussions',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                ...recentDiscussions.map((discussion) => ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: buildDiscussionCard(context, discussion),
+                    )).toList(),
+                SizedBox(height: 24),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Join Events',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: buildEventCard(context),
+                ),
+              ],
+            ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications, color: isDark ? Colors.white70 : Colors.black54),
-            onPressed: () {},
-          ),
-          SizedBox(width: 16),
-        ],
       ),
-      body: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        child: Stack(
+    );
+  }
+
+  Widget buildHeader(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
           children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SizedBox(
-                height: screenHeight * 0.65,
-                child: ClipPath(
-                  clipper: WaveClipper(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark
-                            ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                            : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: [0.0, 1.0],
-                      ),
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+              backgroundImage: NetworkImage("https://picsum.photos/id/798/200/300"),
+            ),
+            SizedBox(width: 12),
+            Text(
+              "Welcome, Gamer!",
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+        IconButton(
+          icon: Icon(Icons.notifications, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          onPressed: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget buildCommunityCarousel(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+
+    return Container(
+      height: 160,
+      child: Swiper(
+        itemBuilder: (context, index) {
+          final category = gameCategories[index % gameCategories.length];
+          return Card(
+            elevation: 1,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    category["image"],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[300],
                     ),
                   ),
                 ),
-              ),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [Colors.black.withOpacity(0.5), Colors.transparent],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                  ),
+                  padding: EdgeInsets.all(12),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      category["name"],
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 16),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      "Featured Communities",
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
+          );
+        },
+        itemCount: gameCategories.length,
+        autoplay: true,
+        autoplayDelay: 4000,
+        viewportFraction: 0.85,
+        scale: 0.9,
+      ),
+    );
+  }
+
+  Widget buildCategoryGrid(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+
+    return StaggeredGrid.count(
+      crossAxisCount: 4,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: gameCategories.asMap().entries.map((entry) {
+        final index = entry.key;
+        final category = entry.value;
+        return StaggeredGridTile.count(
+          crossAxisCellCount: 2,
+          mainAxisCellCount: index.isEven ? 2.0 : 1.8,
+          child: InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Text(
+                    "${category["name"]} Games",
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
-                  SizedBox(height: 12),
-                  Container(
-                    height: 200,
-                    child: Swiper(
-                      itemBuilder: (BuildContext context, int index) {
-                        return Container(
-                          margin: EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(
-                              image: AssetImage(gameCategories[index % gameCategories.length]["image"]),
-                              fit: BoxFit.cover,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: LinearGradient(
-                                colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                gameCategories[index % gameCategories.length]["name"],
-                                style: TextStyle(
-                                  fontFamily: "Poppins",
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      itemCount: gameCategories.length,
-                      autoplay: true,
-                      autoplayDelay: 5000,
-                      viewportFraction: 0.8,
-                      scale: 0.9,
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      "Select Categories",
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  StaggeredGrid.count(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    children: gameCategories.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final category = entry.value;
-                      return StaggeredGridTile.count(
-                        crossAxisCellCount: 2,
-                        mainAxisCellCount: index.isEven ? 2.0 : 1.5,
-                        child: InkWell(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                backgroundColor: isDark ? Color(0xFF1A1D40) : Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                title: Text(
-                                  category["name"] + " Games",
-                                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                                ),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: (category["games"] as List<dynamic>).map((game) {
-                                    return ListTile(
-                                      leading: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.asset(
-                                          game["image"],
-                                          width: 40,
-                                          height: 40,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        game["name"],
-                                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                                      ),
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Joined ${game["name"]} community!')),
-                                        );
-                                      },
-                                    );
-                                  }).toList(),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text("Close", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
-                                  )
-                                ],
-                              ),
-                            );
-                          },
-                          child: AnimatedContainer(
-                            duration: Duration(milliseconds: 200),
-                            margin: EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              image: DecorationImage(
-                                image: AssetImage(category["image"]),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.dstATop),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                category["name"],
-                                style: TextStyle(
-                                  fontFamily: "Poppins",
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.5),
-                                      offset: Offset(0, 2),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: (category["games"] as List<dynamic>).map((game) {
+                      return ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(
+                            game["image"],
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
                           ),
                         ),
+                        title: Text(
+                          game["name"],
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Joined ${game["name"]} community!')),
+                          );
+                        },
                       );
                     }).toList(),
                   ),
-                  SizedBox(height: 24),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      "Recent Discussions",
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text("Close", style: Theme.of(context).textTheme.bodyMedium),
+                    ),
+                  ],
+                ),
+              );
+            },
+            child: Card(
+              elevation: 1,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      category["image"],
+                      fit: BoxFit.cover,
+                      colorBlendMode: BlendMode.darken,
+                      color: Colors.black.withOpacity(0.3),
                     ),
                   ),
-                  SizedBox(height: 12),
-                  ...recentDiscussions.map((discussion) {
-                    return ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Card(
-                        color: isDark ? Colors.grey[800] : Colors.white,
-                        elevation: 4,
-                        margin: EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            discussion["title"]!,
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          subtitle: Text(
-                            "${discussion["category"]} • ${discussion["lastPost"]}",
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              color: isDark ? Colors.white70 : Colors.black54,
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Opening ${discussion["title"]} discussion')),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  SizedBox(height: 24),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
+                  Center(
                     child: Text(
-                      "Join Events",
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Container(
-                      height: 160, // Increased height to fix overflow
-                      width: screenWidth,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [Color(0xFF262A50), Color(0xFF1A1D40)]
-                              : [Color(0xFFE6F0FA), Color(0xFFC1D5FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
+                      category["name"],
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.5),
+                                offset: Offset(0, 2),
+                                blurRadius: 4,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(12), // Reduced padding to fit content
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Weekly Gaming Tournament",
-                              style: TextStyle(
-                                fontFamily: "Poppins",
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              "Join our weekly event and compete with other gamers! Prizes await.",
-                              style: TextStyle(
-                                fontFamily: "Poppins",
-                                fontSize: 14,
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
-                            ),
-                            Spacer(),
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Registered for the tournament!')),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Join Now",
-                                  style: TextStyle(
-                                    fontFamily: "Poppins",
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget buildDiscussionCard(BuildContext context, Map<String, String> discussion) {
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        title: Text(
+          discussion["title"]!,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          "${discussion["category"]} • ${discussion["lastPost"]}",
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+        ),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Opening ${discussion["title"]} discussion')),
+          );
+        },
+      ),
+    ).animate().fadeIn(duration: 800.ms).scale(duration: 800.ms);
+  }
+
+  Widget buildEventCard(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Weekly Gaming Tournament",
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Join our weekly event and compete with other gamers! Prizes await.",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+            ),
+            SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Registered for the tournament!')),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text("Join Now"),
               ),
             ),
           ],
@@ -502,38 +450,4 @@ class _CommunityChatState extends State<CommunityChat> with SingleTickerProvider
       ),
     );
   }
-}
-
-// Custom Wave Clipper (diimpor dari widgets/clipper.dart)
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 100);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
-    var secondEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

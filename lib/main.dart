@@ -27,7 +27,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MyApp(),
     ),
@@ -43,42 +43,60 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
-        primaryColor: const Color.fromARGB(255, 255, 255, 255),
-        scaffoldBackgroundColor: Colors.grey[100],
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF1A1D40),
-          secondary: Colors.purpleAccent,
-          background: Colors.grey,
+        primaryColor: Colors.white,
+        scaffoldBackgroundColor: Color(0xFFF9FAFE),
+        colorScheme: ColorScheme.light(
+          primary: Color(0xFF3B82F6),
+          secondary: Color(0xFF7C3AED),
+          background: Color(0xFFF9FAFE),
+          surface: Colors.white,
         ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontFamily: 'Poppins', fontSize: 16),
-          bodyMedium: TextStyle(fontFamily: 'Poppins', fontSize: 14),
+        textTheme: TextTheme(
+          displayLarge: TextStyle(fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700),
+          bodyLarge: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500),
+          bodyMedium: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400),
         ),
         cardTheme: CardTheme(
-          elevation: 5,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: EdgeInsets.symmetric(vertical: 14),
+            textStyle: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xFF2C2F50),
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF2C2F50),
-          secondary: Colors.purpleAccent,
-          background: Color(0xFF121212),
+        primaryColor: Color(0xFF1F2937),
+        scaffoldBackgroundColor: Color(0xFF111827),
+        colorScheme: ColorScheme.dark(
+          primary: Color(0xFF3B82F6),
+          secondary: Color(0xFF7C3AED),
+          background: Color(0xFF111827),
+          surface: Color(0xFF1F2937),
         ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontFamily: 'Poppins', fontSize: 16),
-          bodyMedium: TextStyle(fontFamily: 'Poppins', fontSize: 14),
+        textTheme: TextTheme(
+          displayLarge: TextStyle(fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700),
+          bodyLarge: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500),
+          bodyMedium: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400),
         ),
         cardTheme: CardTheme(
-          elevation: 5,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: EdgeInsets.symmetric(vertical: 14),
+            textStyle: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
       themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: '/fixedstore', // 👉 Ini diarahkan ke FixeHomePage
+      initialRoute: '/home',
       routes: {
         '/home': (context) => HomePage(),
         '/login': (context) => LoginPage(),
@@ -90,7 +108,7 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => SettingsPage(),
         '/logout': (context) => LoginPage(),
         '/sewaps': (context) => WarnetSelectionPSPage(),
-        '/fixedstore': (context) => FixedStore(), // 👉 Tambahkan ini
+        '/fixedstore': (context) => FixedStore(),
         '/history': (context) => HistoryPage(
               refreshOnLoad: ModalRoute.of(context)!.settings.arguments != null &&
                   (ModalRoute.of(context)!.settings.arguments as Map)['refreshOnLoad'] == true,

@@ -35,25 +35,23 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       bottomNavigationBar: Container(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: Offset(0, -5),
+              offset: Offset(0, -2),
             ),
           ],
         ),
-        child: BottomAppBar(
-          color: Colors.transparent,
-          elevation: 0,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home, "Home", 0, Theme.of(context).colorScheme.secondary, isDark),
+              _buildNavItem(Icons.home, "Home", 0, Theme.of(context).colorScheme.primary, isDark),
               _buildNavItem(Icons.chat_bubble, "Chat", 1, Colors.redAccent, isDark),
               _buildNavItem(Icons.history, "Activity", 2, Colors.orangeAccent, isDark),
               _buildNavItem(Icons.person, "Profile", 3, Colors.blueAccent, isDark),
@@ -70,43 +68,33 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 5,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : [],
+          color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedScale(
-              scale: isSelected ? 1.2 : 1.0,
+              scale: isSelected ? 1.1 : 1.0,
               duration: Duration(milliseconds: 200),
               child: Icon(
                 icon,
-                color: isSelected ? color : (isDark ? Colors.white70 : Colors.white70),
-                size: 28,
+                color: isSelected ? color : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                size: 24,
               ),
             ),
-            if (isSelected)
-              Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isSelected ? color : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+            ),
           ],
         ),
       ),
