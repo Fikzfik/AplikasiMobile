@@ -1,23 +1,62 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../widgets/clipper.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'homepage.dart'; // Pastikan ada halaman home
+import 'package:provider/provider.dart';
+import 'package:fikzuas/main.dart';
+import 'homepage.dart';
 
 class LoginPage extends StatefulWidget {
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _LoginPageRedesignedState createState() => _LoginPageRedesignedState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageRedesignedState extends State<LoginPage>
+    with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+  
   bool _isPressed = false;
   bool _rememberMe = false;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    try {
+      _controller = AnimationController(
+        duration: const Duration(milliseconds: 1200),
+        vsync: this,
+      );
+      _fadeAnimation = CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      );
+      _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+      );
+      _slideAnimation = Tween<Offset>(
+        begin: Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+      
+      _loadSavedCredentials();
+      _controller.forward();
+    } catch (e) {
+      print('Animation initialization error: $e');
+    }
+  }
+
   Future<void> login(String email, String password) async {
+    setState(() => _isLoading = true);
+    
     try {
       final response = await http.post(
         Uri.parse('http://10.0.2.2:8000/api/login'),
@@ -29,37 +68,42 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
         if (data['success']) {
           final prefs = await SharedPreferences.getInstance();
-          // Simpan token
           await prefs.setString('token', data['token']);
-          // Simpan data pengguna lengkap
           await prefs.setString('user', jsonEncode(data['user']));
-          // Simpan id_user secara terpisah untuk akses cepat
           await prefs.setInt('id_user', data['user']['id']);
-          print('Login sukses: ${data['user']['name']} dengan ID: ${data['user']['id']}');
-
-          // Simpan status Remember Me jika diaktifkan
+          
           if (_rememberMe) {
             await prefs.setBool('remember_me', true);
             await prefs.setString('last_email', email);
-            await prefs.setString('last_password', password); // Catatan: Simpan password dengan aman jika diperlukan
+            await prefs.setString('last_password', password);
           } else {
             await prefs.remove('remember_me');
             await prefs.remove('last_email');
             await prefs.remove('last_password');
           }
 
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome back, ${data['user']['name']}!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomePage()),
           );
         } else {
-          showErrorDialog(data['message'] ?? 'Login gagal.');
+          showErrorDialog(data['message'] ?? 'Login failed.');
         }
       } else {
-        showErrorDialog('Terjadi kesalahan. Server tidak merespons.');
+        showErrorDialog('Server error. Please try again.');
       }
     } catch (e) {
-      showErrorDialog('Error: $e');
+      showErrorDialog('Network error: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -68,25 +112,24 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Error'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Error'),
+            ],
+          ),
           content: Text(message),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: Text('OK'),
             ),
           ],
         );
       },
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedCredentials();
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -102,6 +145,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _controller.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -109,279 +153,426 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-
-    double maxWidth = screenWidth < 500 ? screenWidth * 0.9 : 400;
-    double fontSizeLarge = screenWidth * 0.06;
-    double fontSizeMedium = screenWidth * 0.045;
+    final isDark = Provider.of<ThemeProvider>(context).isDark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: ClipPath(
-                  clipper: DiagonalClipper(),
-                  child: Container(
-                    color: isDarkMode ? Colors.black : Color(0xFF1A1D40),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [Color(0xFF0F172A), Color(0xFF1E293B)]
+                : [Color(0xFF667EEA), Color(0xFF764BA2)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Container(
+                      constraints: BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo and Welcome Section
+                          _buildHeader(isDark, primaryColor),
+                          SizedBox(height: 40),
+                          
+                          // Login Form Card
+                          _buildLoginCard(isDark, primaryColor, secondaryColor),
+                          SizedBox(height: 24),
+                          
+                          // Social Login Section
+                          _buildSocialLogin(isDark),
+                          SizedBox(height: 24),
+                          
+                          // Register Link
+                          _buildRegisterLink(isDark),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              Center(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipPath(
-                        clipper: TopDiagonalClipper(),
-                        child: Container(
-                          width: maxWidth,
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.grey[900] : Colors.white,
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(30)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 30,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Login',
-                                style: TextStyle(
-                                  fontSize: fontSizeLarge,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              TextField(
-                                controller: _emailController,
-                                style: TextStyle(
-                                  color: isDarkMode ? Colors.white : Colors.black,
-                                  fontSize: fontSizeMedium,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Email Address',
-                                  hintStyle: TextStyle(
-                                    color: isDarkMode ? Colors.white54 : Colors.grey,
-                                  ),
-                                  prefixIcon: Icon(Icons.email,
-                                      color: isDarkMode ? Colors.white : Colors.black),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              TextField(
-                                controller: _passwordController,
-                                obscureText: true,
-                                style: TextStyle(
-                                  color: isDarkMode ? Colors.white : Colors.black,
-                                  fontSize: fontSizeMedium,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Password',
-                                  hintStyle: TextStyle(
-                                    color: isDarkMode ? Colors.white54 : Colors.grey,
-                                  ),
-                                  prefixIcon: Icon(Icons.lock,
-                                      color: isDarkMode ? Colors.white : Colors.black),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  CupertinoSwitch(
-                                    value: _rememberMe,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _rememberMe = value;
-                                      });
-                                    },
-                                    activeColor: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'Remember me',
-                                    style: TextStyle(
-                                      fontSize: fontSizeMedium,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 32),
-                            ],
-                          ),
-                        ),
-                      ),
-                      ClipPath(
-                        clipper: BottomDiagonalClipper(),
-                        child: Container(
-                          width: maxWidth,
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.grey[900] : Colors.white,
-                            borderRadius: BorderRadius.vertical(
-                              bottom: Radius.circular(30),
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              SizedBox(height: 32),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: GestureDetector(
-                                  onTap: () {},
-                                  child: Text(
-                                    'Forgot password?',
-                                    style: TextStyle(
-                                      fontSize: fontSizeMedium,
-                                      color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: GestureDetector(
-                                  onTapDown: (_) {
-                                    setState(() {
-                                      _isPressed = true;
-                                    });
-                                  },
-                                  onTapUp: (_) {
-                                    setState(() {
-                                      _isPressed = false;
-                                    });
-                                  },
-                                  onTap: () {
-                                    String email = _emailController.text;
-                                    String password = _passwordController.text;
-                                    if (email.isNotEmpty && password.isNotEmpty) {
-                                      login(email, password);
-                                    } else {
-                                      showErrorDialog('Harap isi email dan password.');
-                                    }
-                                  },
-                                  child: AnimatedContainer(
-                                    duration: Duration(milliseconds: 200),
-                                    decoration: BoxDecoration(
-                                      color: _isPressed
-                                          ? Colors.white
-                                          : (isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40)),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
-                                      ),
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 14),
-                                    child: Center(
-                                      child: Text(
-                                        'Login',
-                                        style: TextStyle(
-                                          fontSize: fontSizeMedium,
-                                          color: _isPressed
-                                              ? (isDarkMode ? Colors.black : Color(0xFF1A1D40))
-                                              : Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'or login with',
-                                style: TextStyle(
-                                  fontSize: fontSizeMedium,
-                                  color: isDarkMode ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                    iconSize: screenWidth * 0.08,
-                                    icon: Icon(Icons.facebook,
-                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40)),
-                                    onPressed: () {},
-                                  ),
-                                  IconButton(
-                                    iconSize: screenWidth * 0.08,
-                                    icon: Icon(Icons.camera_alt, color: Colors.red),
-                                    onPressed: () {},
-                                  ),
-                                  IconButton(
-                                    iconSize: screenWidth * 0.08,
-                                    icon: Icon(Icons.android, color: Colors.green),
-                                    onPressed: () {},
-                                  ),
-                                  IconButton(
-                                    iconSize: screenWidth * 0.08,
-                                    icon: Icon(Icons.apple,
-                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40)),
-                                    onPressed: () {},
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Don't have an account?",
-                                    style: TextStyle(
-                                      fontSize: fontSizeMedium,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushNamed(context, '/register');
-                                    },
-                                    child: Text(
-                                      "Register",
-                                      style: TextStyle(
-                                        fontSize: fontSizeMedium,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDarkMode ? Colors.blueAccent : Color(0xFF1A1D40),
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(bool isDark, Color primaryColor) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.gamepad,
+            size: 48,
+            color: Colors.white,
+          ),
+        ).animate().scale(delay: 200.ms),
+        SizedBox(height: 24),
+        Text(
+          'Welcome Back!',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontFamily: 'Inter',
+          ),
+        ).animate().fadeIn(delay: 400.ms),
+        SizedBox(height: 8),
+        Text(
+          'Sign in to continue to GameZone',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white.withOpacity(0.8),
+            fontFamily: 'Inter',
+          ),
+        ).animate().fadeIn(delay: 600.ms),
+      ],
+    );
+  }
+
+  Widget _buildLoginCard(bool isDark, Color primaryColor, Color secondaryColor) {
+    return Container(
+      padding: EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: isDark ? Color(0xFF1F2937).withOpacity(0.9) : Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 30,
+            offset: Offset(0, 15),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Login',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Inter',
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Enter your credentials to access your account',
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontFamily: 'Inter',
+            ),
+          ),
+          SizedBox(height: 32),
+          
+          // Email Field
+          _buildTextField(
+            controller: _emailController,
+            label: 'Email Address',
+            icon: Icons.email_outlined,
+            isDark: isDark,
+          ),
+          SizedBox(height: 20),
+          
+          // Password Field
+          _buildTextField(
+            controller: _passwordController,
+            label: 'Password',
+            icon: Icons.lock_outline,
+            isDark: isDark,
+            isPassword: true,
+            obscureText: _obscurePassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
+          ),
+          SizedBox(height: 20),
+          
+          // Remember Me & Forgot Password
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: _rememberMe,
+                      onChanged: (value) => setState(() => _rememberMe = value),
+                      activeColor: primaryColor,
+                    ),
+                  ),
+                  Text(
+                    'Remember me',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () {},
+                child: Text(
+                  'Forgot Password?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: primaryColor,
+                    fontFamily: 'Inter',
                   ),
                 ),
               ),
             ],
-          );
-        },
+          ),
+          SizedBox(height: 32),
+          
+          // Login Button
+          _buildLoginButton(primaryColor, secondaryColor),
+        ],
+      ),
+    ).animate().fadeIn(delay: 800.ms);
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    bool isPassword = false,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Inter',
+          ),
+        ),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Color(0xFF374151) : Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Color(0xFF4B5563) : Color(0xFFE5E7EB),
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Inter',
+            ),
+            decoration: InputDecoration(
+              hintText: 'Enter your $label',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[500],
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: isDark ? Colors.grey[400] : Colors.grey[500],
+              ),
+              suffixIcon: suffixIcon,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginButton(Color primaryColor, Color secondaryColor) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryColor, secondaryColor],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _isLoading ? null : () {
+            String email = _emailController.text.trim();
+            String password = _passwordController.text.trim();
+            if (email.isNotEmpty && password.isNotEmpty) {
+              login(email, password);
+            } else {
+              showErrorDialog('Please fill in all fields.');
+            }
+          },
+          child: Center(
+            child: _isLoading
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.login, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildSocialLogin(bool isDark) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Or continue with',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+          ],
+        ),
+        SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildSocialButton(Icons.g_mobiledata, Colors.red, 'Google'),
+            _buildSocialButton(Icons.facebook, Colors.blue, 'Facebook'),
+            _buildSocialButton(Icons.apple, isDark ? Colors.white : Colors.black, 'Apple'),
+          ],
+        ),
+      ],
+    ).animate().fadeIn(delay: 1000.ms);
+  }
+
+  Widget _buildSocialButton(IconData icon, Color color, String label) {
+    return Container(
+      width: 80,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$label login coming soon!')),
+            );
+          },
+          child: Center(
+            child: Icon(icon, color: color, size: 28),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterLink(bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 16,
+            fontFamily: 'Inter',
+          ),
+        ),
+        GestureDetector(
+          onTap: () => Navigator.pushNamed(context, '/register'),
+          child: Text(
+            'Sign Up',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Inter',
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 1200.ms);
   }
 }
