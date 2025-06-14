@@ -83,22 +83,18 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
             userName = "Data Not Found";
             userBalance = 0;
           });
-          print('Invalid response data: $data');
         }
       } else {
         setState(() {
           userName = "Failed to Load: ${response.statusCode}";
           userBalance = 0;
         });
-        print(
-            'Failed to load user data. Status: ${response.statusCode}, Body: ${response.body}');
       }
     } catch (e) {
       setState(() {
         userName = "Error: $e";
         userBalance = 0;
       });
-      print('Error loading user data: $e');
     }
   }
 
@@ -171,6 +167,8 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
     // Determine if Saldo is disabled based on selected amount and balance
     final selectedOption = selectedTopUpOption != null
@@ -179,1015 +177,628 @@ class _TopUpDetailsPageState extends State<TopUpDetailsPage> {
         : null;
     final isSaldoDisabled =
         selectedOption != null && userBalance < selectedOption["price"];
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1D40),
-        elevation: 0,
-        title: Text(
-          "Top-Up ${widget.gameName}",
-          style: const TextStyle(
-            fontFamily: "Poppins",
-            fontSize: 18,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [Color(0xFF191B2F), Color(0xFF191B2F)]
+                : [Colors.white, Colors.white],
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.65,
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [
-                              Color(0xFF2C2F50),
-                              Color(0xFF1A1D40).withOpacity(0.9)
-                            ]
-                          : [
-                              Color(0xFF3A3D60),
-                              Color(0xFF2C2F50).withOpacity(0.85)
-                            ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 1.0],
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      "Top-Up ${widget.gameName}",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ).animate().fadeIn(duration: 600.ms),
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 20,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 70),
-                  Row(
+
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          widget.gameImage,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                  color: Colors.grey, width: 60, height: 60),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        widget.gameName,
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
-                          shadows: const [
-                            Shadow(
-                              color: Colors.black26,
-                              offset: Offset(2, 2),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ).animate().fadeIn(duration: 600.ms).scale(),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "1. Masukkan User ID",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.help_outline,
-                            color: Colors.blueAccent),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("Help"),
-                              content: const Text(
-                                "Untuk mengetahui User ID Anda, silakan klik menu profile di bagian kiri atas pada menu utama game. User ID akan terlihat di bawah Nama Karakter Game Anda. Silakan masukkan User ID Anda untuk menyelesaikan transaksi. Contoh: 12345678(1234).",
-                                style: TextStyle(fontFamily: "Poppins"),
+                      // Game info
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              widget.gameImage,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: isDark
+                                    ? Color(0xFF1F2236)
+                                    : Colors.grey[300],
+                                width: 60,
+                                height: 60,
+                                child: Icon(
+                                  Icons.image_not_supported_rounded,
+                                  color:
+                                      isDark ? Colors.white38 : Colors.black38,
+                                ),
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text("Close"),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.gameName,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                Text(
+                                  "Official Top-Up Center",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark
+                                        ? Colors.white60
+                                        : Colors.black54,
+                                  ),
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ).animate().fadeIn(duration: 600.ms),
-                  const SizedBox(height: 8),
-                  Form(
-                    key: formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: userIdController,
-                          decoration: InputDecoration(
-                            labelText: "Masukkan User ID",
-                            labelStyle: const TextStyle(fontFamily: "Poppins"),
-                            prefixIcon: const Icon(Icons.person,
-                                color: Colors.blueAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Colors.blueAccent, width: 2),
-                            ),
-                            filled: true,
-                            fillColor:
-                                isDark ? Colors.grey[800] : Colors.grey[100],
                           ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter your User ID";
-                            }
-                            return null;
-                          },
+                        ],
+                      ).animate().fadeIn(duration: 800.ms).scale(),
+
+                      SizedBox(height: 24),
+
+                      // User ID section
+                      _buildSectionHeader("1. Masukkan User ID",
+                          Icons.person_rounded, primaryColor),
+                      SizedBox(height: 16),
+                      Form(
+                        key: formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: userIdController,
+                              decoration: InputDecoration(
+                                labelText: "Masukkan User ID",
+                                labelStyle: TextStyle(fontFamily: "Poppins"),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                filled: true,
+                                fillColor: isDark
+                                    ? Color(0xFF1F2236)
+                                    : Colors.grey[100],
+                                prefixIcon: Icon(Icons.person_rounded,
+                                    color: primaryColor),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Please enter your User ID";
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16),
+                            TextFormField(
+                              controller: zoneIdController,
+                              decoration: InputDecoration(
+                                labelText: "Zone ID",
+                                labelStyle: TextStyle(fontFamily: "Poppins"),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                filled: true,
+                                fillColor: isDark
+                                    ? Color(0xFF1F2236)
+                                    : Colors.grey[100],
+                                prefixIcon: Icon(Icons.map_rounded,
+                                    color: primaryColor),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Please enter your Zone ID";
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: zoneIdController,
-                          decoration: InputDecoration(
-                            labelText: "Zone ID",
-                            labelStyle: const TextStyle(fontFamily: "Poppins"),
-                            prefixIcon:
-                                const Icon(Icons.map, color: Colors.blueAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Colors.blueAccent, width: 2),
-                            ),
-                            filled: true,
-                            fillColor:
-                                isDark ? Colors.grey[800] : Colors.grey[100],
+                      )
+                          .animate()
+                          .fadeIn(duration: 900.ms)
+                          .slideY(begin: 0.2, end: 0),
+
+                      SizedBox(height: 24),
+
+                      // Top-up options section
+                      _buildSectionHeader("2. Pilih Nominal Top Up",
+                          Icons.diamond_rounded, primaryColor),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.trending_up_rounded,
+                            color: accentColor,
+                            size: 16,
                           ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter your Zone ID";
-                            }
-                            return null;
+                          SizedBox(width: 8),
+                          Text(
+                            "22,751 item dibeli dalam satu jam terakhir",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              color: accentColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(duration: 950.ms),
+
+                      SizedBox(height: 16),
+
+                      // Tab buttons
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildTabButton("2x Recharge Bonus",
+                                Icons.replay_rounded, isDark, primaryColor),
+                            SizedBox(width: 8),
+                            _buildTabButton("Diamond", Icons.diamond_rounded,
+                                isDark, primaryColor),
+                            SizedBox(width: 8),
+                            _buildTabButton("Twilight Pass", Icons.star_rounded,
+                                isDark, primaryColor),
+                            SizedBox(width: 8),
+                            _buildTabButton(
+                                "Weekly Diamond",
+                                Icons.calendar_today_rounded,
+                                isDark,
+                                primaryColor),
+                          ],
+                        ),
+                      )
+                          .animate()
+                          .fadeIn(duration: 1000.ms)
+                          .slideX(begin: -0.2, end: 0),
+
+                      SizedBox(height: 16),
+
+                      // Top-up options grid
+                      if (selectedTab == "2x Recharge Bonus") ...[
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.2,
+                          ),
+                          itemCount: topUpOptions.length,
+                          itemBuilder: (context, index) {
+                            final option = topUpOptions[index];
+                            final isSelected =
+                                selectedTopUpOption == option["diamonds"];
+                            return _buildTopUpCard(option, isSelected, index,
+                                isDark, primaryColor);
                           },
                         ),
                       ],
-                    ),
-                  ).animate().slideY(duration: 500.ms, begin: 0.5, end: 0.0),
-                  const SizedBox(height: 16),
-                  Text(
-                    "2. Pilih Nominal Top Up",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
-                  ).animate().fadeIn(duration: 600.ms),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.trending_up,
-                          color: Colors.redAccent, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        "22,751 item dibeli dalam satu jam terakhir",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 12,
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ).animate().fadeIn(duration: 600.ms),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Flexible(
-                          child: _buildTopUpButton(
-                              "2x Recharge Bonus", Icons.replay, isDark,
-                              onTap: () => setTab("2x Recharge Bonus"))),
-                      Flexible(
-                          child: _buildTopUpButton(
-                              "Diamond", Icons.diamond, isDark,
-                              onTap: () => setTab("Diamond"))),
-                      Flexible(
-                          child: _buildTopUpButton(
-                              "Twilight Pass", Icons.star, isDark,
-                              onTap: () => setTab("Twilight Pass"))),
-                      Flexible(
-                          child: _buildTopUpButton(
-                              "Weekly Diamond", Icons.calendar_today, isDark,
-                              onTap: () => setTab("Weekly Diamond"))),
-                    ],
-                  ).animate().slideX(duration: 500.ms, begin: -0.5, end: 0.0),
-                  if (selectedTab != null) ...[
-                    const SizedBox(height: 16),
-                    if (selectedTab == "2x Recharge Bonus") ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        "2x Recharge Bonus",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Selama event ini, player yang belum top up tingkat 50/150/250/500 Diamond melalui platform lain bisa mendapatkan bonus ganda pada pembelian pertama melebihi item berikut. Top-up sekarang untuk bonus tambahan!",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 10,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: topUpOptions.length,
-                        itemBuilder: (context, index) {
-                          final option = topUpOptions[index];
-                          final isSelected =
-                              selectedTopUpOption == option["diamonds"];
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedTopUpOption = option["diamonds"];
-                                // Auto-deselect Saldo if balance is insufficient
-                                if (selectedPaymentMethod == "Saldo" &&
-                                    userBalance < option["price"]) {
-                                  selectedPaymentMethod = null;
-                                }
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isSelected
-                                      ? [
-                                          const Color(0xFF34D399),
-                                          const Color(0xFF10B981)
-                                        ]
-                                      : [
-                                          isDark
-                                              ? const Color(0xFF4B5563)
-                                              : const Color(0xFFE5E7EB),
-                                          isDark
-                                              ? const Color(0xFF374151)
-                                              : const Color(0xFFD1D5DB),
-                                        ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF10B981)
-                                      : Colors.transparent,
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    option["diamonds"],
-                                    style: TextStyle(
-                                      fontFamily: "Poppins",
-                                      fontSize: 12,
-                                      color:
-                                          isDark ? Colors.white : Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Rp. ${option["price"].toStringAsFixed(0)}",
-                                    style: TextStyle(
-                                      fontFamily: "Poppins",
-                                      fontSize: 10,
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/dia.png',
-                                        width: 12,
-                                        height: 12,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Icon(Icons.diamond,
-                                                    color: Colors.blueAccent,
-                                                    size: 12),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "-${index * 2 + 12}%",
-                                        style: const TextStyle(
-                                          fontFamily: "Poppins",
-                                          fontSize: 10,
-                                          color: Colors.redAccent,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/dia.png',
-                                        width: 12,
-                                        height: 12,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Icon(Icons.diamond,
-                                                    color: Colors.orangeAccent,
-                                                    size: 12),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "${option["rewards"]} Bonus",
-                                        style: TextStyle(
-                                          fontFamily: "Poppins",
-                                          fontSize: 10,
-                                          color: isDark
-                                              ? Colors.white70
-                                              : Colors.black54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (index < 4)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Colors.redAccent,
-                                            Colors.red
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        "HOT",
-                                        style: TextStyle(
-                                          fontFamily: "Poppins",
-                                          fontSize: 8,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            )
-                                .animate()
-                                .scale(
-                                    duration: 500.ms, delay: (index * 100).ms)
-                                .shimmer(
-                                  duration: 1200.ms,
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                          );
-                        },
-                      ),
-                    ],
-                    if (selectedTab == "Diamond") ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        "Diamond Purchase Options",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Choose from various diamond packs to enhance your gameplay. More diamonds, more fun!",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 10,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: topUpOptions.length,
-                        itemBuilder: (context, index) {
-                          final option = topUpOptions[index];
-                          final isSelected =
-                              selectedTopUpOption == option["diamonds"];
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedTopUpOption = option["diamonds"];
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isSelected
-                                      ? [
-                                          const Color(0xFF34D399),
-                                          const Color(0xFF10B981)
-                                        ]
-                                      : [
-                                          isDark
-                                              ? const Color(0xFF4B5563)
-                                              : const Color(0xFFE5E7EB),
-                                          isDark
-                                              ? const Color(0xFF374151)
-                                              : const Color(0xFFD1D5DB),
-                                        ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF10B981)
-                                      : Colors.transparent,
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    option["diamonds"],
-                                    style: TextStyle(
-                                      fontFamily: "Poppins",
-                                      fontSize: 12,
-                                      color:
-                                          isDark ? Colors.white : Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Rp. ${option["price"].toStringAsFixed(0)}",
-                                    style: TextStyle(
-                                      fontFamily: "Poppins",
-                                      fontSize: 10,
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/dia.png',
-                                        width: 12,
-                                        height: 12,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Icon(Icons.diamond,
-                                                    color: Colors.blueAccent,
-                                                    size: 12),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "-${index * 2 + 12}%",
-                                        style: const TextStyle(
-                                          fontFamily: "Poppins",
-                                          fontSize: 10,
-                                          color: Colors.redAccent,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/dia.png',
-                                        width: 12,
-                                        height: 12,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Icon(Icons.diamond,
-                                                    color: Colors.orangeAccent,
-                                                    size: 12),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "${option["rewards"]} Rewards",
-                                        style: TextStyle(
-                                          fontFamily: "Poppins",
-                                          fontSize: 10,
-                                          color: isDark
-                                              ? Colors.white70
-                                              : Colors.black54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (index < 4)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Colors.redAccent,
-                                            Colors.red
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        "HOT",
-                                        style: TextStyle(
-                                          fontFamily: "Poppins",
-                                          fontSize: 8,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            )
-                                .animate()
-                                .scale(
-                                    duration: 500.ms, delay: (index * 100).ms)
-                                .shimmer(
-                                  duration: 1200.ms,
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                          );
-                        },
-                      ),
-                    ],
-                    if (selectedTab == "Twilight Pass") ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        "Twilight Pass Details",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Unlock exclusive Twilight Pass rewards including skins, emotes, and missions. Available for a limited time!",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 10,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: 4,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF6B7280),
-                                  const Color(0xFF4B5563)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Text(
-                                "Tier ${index + 1} Reward",
-                                style: TextStyle(
-                                  fontFamily: "Poppins",
-                                  fontSize: 12,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                    if (selectedTab == "Weekly Diamond") ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        "Weekly Diamond Offer",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Weekly diamond packs with up to 20% discount. Renew every Monday for new offers!",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 10,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: 4,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF6B7280),
-                                  const Color(0xFF4B5563)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Text(
-                                "Pack ${index + 1} - 20% Off",
-                                style: TextStyle(
-                                  fontFamily: "Poppins",
-                                  fontSize: 12,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ],
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "User: $userName",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 16,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      Text(
-                        "Balance: Rp. $userBalance",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 16,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Select Payment Method",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
-                  ).animate().fadeIn(duration: 600.ms),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: "Payment Method",
-                            labelStyle: const TextStyle(fontFamily: "Poppins"),
-                            prefixIcon: const Icon(Icons.payment,
-                                color: Colors.blueAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: Colors.blueAccent, width: 2),
-                            ),
-                            filled: true,
-                            fillColor:
-                                isDark ? Colors.grey[800] : Colors.grey[100],
-                          ),
-                          value: selectedPaymentMethod,
-                          items: paymentMethods.map((String method) {
-                            final isDisabled =
-                                method == "Saldo" && isSaldoDisabled;
-                            return DropdownMenuItem<String>(
-                              value: method,
-                              enabled: !isDisabled,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    method,
-                                    style: TextStyle(
-                                      fontFamily: "Poppins",
-                                      color: isDisabled
-                                          ? Colors.grey
-                                          : (isDark
-                                              ? Colors.white
-                                              : Colors.black),
-                                    ),
-                                  ),
-                                  if (isDisabled)
-                                    const Text(
-                                      " (Insufficient Balance)",
-                                      style: TextStyle(
-                                        fontFamily: "Poppins",
-                                        fontSize: 12,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedPaymentMethod = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return "Please select a payment method";
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ).animate().slideY(duration: 500.ms, begin: 0.5, end: 0.0),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _performTopUp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ).copyWith(
-                        backgroundColor:
-                            MaterialStateProperty.resolveWith<Color>(
-                          (states) => Colors.transparent,
-                        ),
-                        foregroundColor:
-                            MaterialStateProperty.resolveWith<Color>(
-                          (states) {
-                            if (states.contains(MaterialState.pressed)) {
-                              return Colors.white.withOpacity(0.8);
-                            }
-                            return Colors.white;
-                          },
-                        ),
-                        overlayColor: MaterialStateProperty.resolveWith<Color>(
-                          (states) => Colors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Container(
+
+                      SizedBox(height: 24),
+
+                      // User info
+                      Container(
+                        padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF34D399), Color(0xFF10B981)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
+                          color: isDark ? Color(0xFF262A43) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: const Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "User",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark
+                                        ? Colors.white60
+                                        : Colors.black54,
+                                  ),
+                                ),
+                                Text(
+                                  userName,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  "Balance",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark
+                                        ? Colors.white60
+                                        : Colors.black54,
+                                  ),
+                                ),
+                                Text(
+                                  "Rp. $userBalance",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(duration: 1100.ms),
+
+                      SizedBox(height: 24),
+
+                      // Payment method section
+                      _buildSectionHeader("Select Payment Method",
+                          Icons.payment_rounded, primaryColor),
+                      SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: "Payment Method",
+                          labelStyle: TextStyle(fontFamily: "Poppins"),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor:
+                              isDark ? Color(0xFF1F2236) : Colors.grey[100],
+                          prefixIcon:
+                              Icon(Icons.payment_rounded, color: primaryColor),
+                        ),
+                        value: selectedPaymentMethod,
+                        items: paymentMethods.map((String method) {
+                          final isDisabled =
+                              method == "Saldo" && isSaldoDisabled;
+                          return DropdownMenuItem<String>(
+                            value: method,
+                            enabled: !isDisabled,
+                            child: Row(
+                              children: [
+                                Text(
+                                  method,
+                                  style: TextStyle(
+                                    fontFamily: "Poppins",
+                                    color: isDisabled
+                                        ? Colors.grey
+                                        : (isDark
+                                            ? Colors.white
+                                            : Colors.black),
+                                  ),
+                                ),
+                                if (isDisabled)
+                                  Text(
+                                    " (Insufficient Balance)",
+                                    style: TextStyle(
+                                      fontFamily: "Poppins",
+                                      fontSize: 12,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedPaymentMethod = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return "Please select a payment method";
+                          }
+                          return null;
+                        },
+                      )
+                          .animate()
+                          .fadeIn(duration: 1150.ms)
+                          .slideY(begin: 0.2, end: 0),
+
+                      SizedBox(height: 24),
+
+                      // Confirm button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _performTopUp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            minimumSize: Size(double.infinity, 56),
+                          ),
                           child: Text(
                             "Confirm Top-Up",
                             style: TextStyle(
-                              fontFamily: "Poppins",
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 600.ms).scale(),
-                  const SizedBox(height: 16),
-                ],
+                      ).animate().fadeIn(duration: 1200.ms).scale(),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  void setTab(String tab) {
-    setState(() {
-      selectedTab = tab;
-    });
+  Widget _buildSectionHeader(String title, IconData icon, Color primaryColor) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: primaryColor,
+            size: 20,
+          ),
+        ),
+        SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildTopUpButton(String label, IconData icon, bool isDark,
-      {VoidCallback? onTap}) {
+  Widget _buildTabButton(
+      String label, IconData icon, bool isDark, Color primaryColor) {
     final isSelected = selectedTab == label;
-    return ElevatedButton(
-      onPressed: onTap ?? () {},
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(
-              color: isSelected ? Colors.blueAccent : Colors.transparent,
-              width: 2),
-        ),
-        padding: const EdgeInsets.all(4),
-      ).copyWith(
-        backgroundColor: MaterialStateProperty.resolveWith<Color>(
-          (states) => isSelected
-              ? (isDark ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB))
-              : Colors.transparent,
-        ),
-        foregroundColor: MaterialStateProperty.resolveWith<Color>(
-          (states) {
-            if (states.contains(MaterialState.pressed)) {
-              return Colors.white.withOpacity(0.8);
-            }
-            return Colors.white;
-          },
-        ),
-        overlayColor: MaterialStateProperty.resolveWith<Color>(
-          (states) => Colors.white.withOpacity(0.2),
-        ),
-      ),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedTab = label;
+        });
+      },
       child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              isDark ? const Color(0xFF6B7280) : const Color(0xFFE5E7EB),
-              isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          color: isSelected
+              ? primaryColor
+              : (isDark ? Color(0xFF262A43) : Colors.grey[200]),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? primaryColor : Colors.transparent,
+            width: 2,
           ),
-          borderRadius: BorderRadius.circular(10),
         ),
-        padding: const EdgeInsets.all(4),
-        child: Column(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isDark ? Colors.white : Colors.black87, size: 16),
-            const SizedBox(height: 2),
+            Icon(
+              icon,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.white60 : Colors.black54),
+              size: 16,
+            ),
+            SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                fontFamily: "Poppins",
-                fontSize: 10,
-                color: isDark ? Colors.white70 : Colors.black54,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontFamily: 'Poppins',
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.white60 : Colors.black54),
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 100);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
+  Widget _buildTopUpCard(Map<String, dynamic> option, bool isSelected,
+      int index, bool isDark, Color primaryColor) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedTopUpOption = option["diamonds"];
+          // Auto-deselect Saldo if balance is insufficient
+          if (selectedPaymentMethod == "Saldo" &&
+              userBalance < option["price"]) {
+            selectedPaymentMethod = null;
+          }
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor.withOpacity(0.2)
+              : (isDark ? Color(0xFF262A43) : Colors.white),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? primaryColor : Colors.transparent,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                option["diamonds"],
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Rp. ${option["price"].toStringAsFixed(0)}",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.diamond_rounded,
+                    color: Color(0xFFFFB800),
+                    size: 12,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    "${option["rewards"]} Bonus",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 10,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+              if (index < 2)
+                Container(
+                  margin: EdgeInsets.only(top: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    "HOT",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 8,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      )
+          .animate()
+          .fadeIn(duration: 600.ms, delay: (index * 100).ms)
+          .scale(delay: (index * 100).ms),
     );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
-    var secondEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
   }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

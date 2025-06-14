@@ -1,4 +1,3 @@
-import 'package:fikzuas/FixedStoreApp.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/pages/Warnet/WarnetSelectionPage.dart';
@@ -52,19 +51,25 @@ class MyApp extends StatelessWidget {
           surface: Colors.white,
         ),
         textTheme: TextTheme(
-          displayLarge: TextStyle(fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700),
-          bodyLarge: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500),
-          bodyMedium: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400),
+          displayLarge: TextStyle(
+              fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700),
+          bodyLarge: TextStyle(
+              fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500),
+          bodyMedium: TextStyle(
+              fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400),
         ),
         cardTheme: CardTheme(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: EdgeInsets.symmetric(vertical: 14),
-            textStyle: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600),
+            textStyle: TextStyle(
+                fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -79,19 +84,25 @@ class MyApp extends StatelessWidget {
           surface: Color(0xFF1F2937),
         ),
         textTheme: TextTheme(
-          displayLarge: TextStyle(fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700),
-          bodyLarge: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500),
-          bodyMedium: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400),
+          displayLarge: TextStyle(
+              fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700),
+          bodyLarge: TextStyle(
+              fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500),
+          bodyMedium: TextStyle(
+              fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400),
         ),
         cardTheme: CardTheme(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: EdgeInsets.symmetric(vertical: 14),
-            textStyle: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600),
+            textStyle: TextStyle(
+                fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -108,10 +119,12 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => SettingsPage(),
         '/logout': (context) => LoginPage(),
         '/sewaps': (context) => WarnetSelectionPSPage(),
-        '/fixedstore': (context) => FixedStore(),
         '/history': (context) => HistoryPage(
-              refreshOnLoad: ModalRoute.of(context)!.settings.arguments != null &&
-                  (ModalRoute.of(context)!.settings.arguments as Map)['refreshOnLoad'] == true,
+              refreshOnLoad:
+                  ModalRoute.of(context)?.settings.arguments != null &&
+                      (ModalRoute.of(context)!.settings.arguments
+                              as Map?)?['refreshOnLoad'] ==
+                          true,
             ),
       },
     );

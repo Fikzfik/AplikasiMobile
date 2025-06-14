@@ -14,6 +14,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args['selectedIndex'] != null) {
+      print('Received selectedIndex: ${args['selectedIndex']}');
+      setState(() {
+        _selectedIndex = args['selectedIndex'] as int;
+      });
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -30,7 +43,12 @@ class _HomePageState extends State<HomePage> {
         children: [
           DashboardPage(),
           CommunityChat(),
-          HistoryPage(),
+          HistoryPage(
+              refreshOnLoad:
+                  ModalRoute.of(context)?.settings.arguments != null &&
+                      (ModalRoute.of(context)!.settings.arguments
+                              as Map?)?['refreshOnLoad'] ==
+                          true),
           SettingsPage(),
         ],
       ),
@@ -51,10 +69,14 @@ class _HomePageState extends State<HomePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home, "Home", 0, Theme.of(context).colorScheme.primary, isDark),
-              _buildNavItem(Icons.chat_bubble, "Chat", 1, Colors.redAccent, isDark),
-              _buildNavItem(Icons.history, "Activity", 2, Colors.orangeAccent, isDark),
-              _buildNavItem(Icons.person, "Profile", 3, Colors.blueAccent, isDark),
+              _buildNavItem(Icons.home, "Home", 0,
+                  Theme.of(context).colorScheme.primary, isDark),
+              _buildNavItem(
+                  Icons.chat_bubble, "Chat", 1, Colors.redAccent, isDark),
+              _buildNavItem(
+                  Icons.history, "Activity", 2, Colors.orangeAccent, isDark),
+              _buildNavItem(
+                  Icons.person, "Profile", 3, Colors.blueAccent, isDark),
             ],
           ),
         ),
@@ -62,7 +84,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index, Color color, bool isDark) {
+  Widget _buildNavItem(
+      IconData icon, String label, int index, Color color, bool isDark) {
     bool isSelected = _selectedIndex == index;
 
     return GestureDetector(
@@ -82,7 +105,9 @@ class _HomePageState extends State<HomePage> {
               duration: Duration(milliseconds: 200),
               child: Icon(
                 icon,
-                color: isSelected ? color : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                color: isSelected
+                    ? color
+                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
                 size: 24,
               ),
             ),
@@ -90,7 +115,9 @@ class _HomePageState extends State<HomePage> {
             Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isSelected ? color : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                    color: isSelected
+                        ? color
+                        : (isDark ? Colors.grey[400] : Colors.grey[600]),
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),

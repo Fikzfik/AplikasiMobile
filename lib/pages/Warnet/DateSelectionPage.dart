@@ -1,5 +1,7 @@
+// date_selection_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import 'package:fikzuas/pages/Warnet/TimeSelectionPage.dart';
 
 class DateSelectionPage extends StatefulWidget {
@@ -7,6 +9,8 @@ class DateSelectionPage extends StatefulWidget {
   final int pcNumber;
   final int warnetId;
   final int? pcId;
+  final String pcName;
+  final String pcSpecs;
 
   const DateSelectionPage({
     Key? key,
@@ -14,6 +18,8 @@ class DateSelectionPage extends StatefulWidget {
     required this.pcNumber,
     required this.warnetId,
     required this.pcId,
+    required this.pcName,
+    required this.pcSpecs,
   }) : super(key: key);
 
   @override
@@ -22,25 +28,17 @@ class DateSelectionPage extends StatefulWidget {
 
 class _DateSelectionPageState extends State<DateSelectionPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
   DateTime? selectedDate;
   late DateTime _currentMonth;
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    _currentMonth = DateTime.now();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _controller.forward();
   }
@@ -59,347 +57,306 @@ class _DateSelectionPageState extends State<DateSelectionPage> with SingleTicker
     return DateTime(date.year, date.month, 1).weekday % 7;
   }
 
+  void _selectDate(DateTime date) {
+    if (date.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
+      return;
+    }
+    
+    setState(() {
+      selectedDate = date;
+    });
+    
+    Future.delayed(Duration(milliseconds: 300), () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TimeSelectionPage(
+            warnetName: widget.warnetName,
+            pcNumber: widget.pcNumber,
+            selectedDate: date,
+            warnetId: widget.warnetId,
+            pcId: widget.pcId,
+            pcName: widget.pcName,
+            pcSpecs: widget.pcSpecs,
+          ),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
-    const List<String> daysOfWeek = [
-      'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
-    ];
-
+    const List<String> daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     final daysInMonth = _daysInMonth(_currentMonth);
     final firstDayOffset = _firstDayOffset(_currentMonth);
     final totalGridItems = firstDayOffset + daysInMonth;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SizedBox(
-              height: screenHeight * 0.65,
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 1.0],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark 
+                ? [Color(0xFF191B2F), Color(0xFF191B2F)]
+                : [Colors.white, Colors.white],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      "Select Date",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ).animate().fadeIn(duration: 600.ms),
+                    SizedBox(width: 40),
+                  ],
                 ),
               ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+              
+              // Booking info card
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Color(0xFF262A43) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: Colors.white70,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            'Select Booking Date',
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.computer_rounded,
+                        color: primaryColor,
+                        size: 28,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Booking ${widget.pcName}",
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 22,
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.grey.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                              color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
-                        ),
-                        SizedBox(width: 48),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.1)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
+                          SizedBox(height: 4),
+                          Text(
+                            "at ${widget.warnetName}",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              color: isDark ? Colors.white60 : Colors.black54,
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          'Booking PC ${widget.pcNumber} at ${widget.warnetName}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_left,
-                            color: Colors.white70,
-                            size: 30,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
-                              selectedDate = null;
-                            });
-                          },
-                        ),
-                        Text(
-                          '${_getMonthName(_currentMonth.month)} ${_currentMonth.year}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_right,
-                            color: Colors.white70,
-                            size: 30,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
-                              selectedDate = null;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: daysOfWeek.map((day) {
-                        return Expanded(
-                          child: Center(
-                            child: Text(
-                              day,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white70,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.grey.withOpacity(0.3),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ).animate().fadeIn(duration: 600.ms),
-                    SizedBox(height: 8),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 7,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 1.0,
+                  ],
+                ),
+              ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.2, end: 0),
+              
+              // Month navigation
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.chevron_left_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 32,
                       ),
-                      itemCount: (totalGridItems + 6) ~/ 7 * 7,
-                      itemBuilder: (context, index) {
-                        final dayIndex = index - firstDayOffset + 1;
-                        final date = dayIndex > 0 && dayIndex <= daysInMonth
-                            ? DateTime(_currentMonth.year, _currentMonth.month, dayIndex)
-                            : null;
-
-                        if (date == null) {
-                          return SizedBox.shrink();
-                        }
-
-                        final isSelected = selectedDate == date;
-                        final isToday = date.day == DateTime.now().day &&
-                            date.month == DateTime.now().month &&
-                            date.year == DateTime.now().year;
-                        final isPast = date.isBefore(DateTime.now().subtract(Duration(days: 1)));
-
-                        return GestureDetector(
-                          onTap: isPast
-                              ? null
-                              : () {
-                                  // Langsung navigasi ke TimeSelectionPage saat tanggal dipilih
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => TimeSelectionPage(
-                                        warnetName: widget.warnetName,
-                                        pcNumber: widget.pcNumber,
-                                        selectedDate: date,
-                                        warnetId: widget.warnetId,
-                                        pcId: widget.pcId,
-                                      ),
-                                    ),
-                                  );
-                                },
-                          child: AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: isSelected
-                                    ? [Colors.amberAccent, Colors.amber]
-                                    : (isToday
-                                        ? [Colors.blueAccent, Colors.blue]
-                                        : (isPast
-                                            ? [Colors.grey[400]!, Colors.grey[500]!]
-                                            : [Colors.white, Colors.grey[200]!])),
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              border: isSelected
-                                  ? Border.all(color: Colors.amberAccent.withOpacity(0.7), width: 2)
-                                  : null,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isSelected
-                                      ? Colors.amber.withOpacity(0.5)
-                                      : (isToday ? Colors.blue.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
-                                  blurRadius: isSelected ? 10 : 6,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                '$dayIndex',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected
-                                      ? Colors.black87
-                                      : (isToday
-                                          ? Colors.white
-                                          : (isPast ? Colors.grey[700] : Colors.black54)),
-                                ),
-                              ),
-                            ),
-                          ).animate().fadeIn(duration: 500.ms + (index * 20).ms).scale(),
-                        );
+                      onPressed: () {
+                        setState(() {
+                          _currentMonth = DateTime(
+                            _currentMonth.year,
+                            _currentMonth.month - 1,
+                            1,
+                          );
+                          selectedDate = null;
+                        });
+                      },
+                    ),
+                    Text(
+                      DateFormat('MMMM yyyy').format(_currentMonth),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.chevron_right_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 32,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _currentMonth = DateTime(
+                            _currentMonth.year,
+                            _currentMonth.month + 1,
+                            1,
+                          );
+                          selectedDate = null;
+                        });
                       },
                     ),
                   ],
                 ),
+              ).animate().fadeIn(duration: 1000.ms),
+              
+              // Days of week
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: daysOfWeek.map((day) {
+                    return Expanded(
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ).animate().fadeIn(duration: 1200.ms),
+              
+              // Calendar grid
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemCount: (totalGridItems + 6) ~/ 7 * 7,
+                    itemBuilder: (context, index) {
+                      final dayIndex = index - firstDayOffset + 1;
+                      
+                      if (dayIndex < 1 || dayIndex > daysInMonth) {
+                        return SizedBox.shrink();
+                      }
+                      
+                      final date = DateTime(_currentMonth.year, _currentMonth.month, dayIndex);
+                      final isSelected = selectedDate != null && 
+                          selectedDate!.year == date.year && 
+                          selectedDate!.month == date.month && 
+                          selectedDate!.day == date.day;
+                      final isToday = DateTime.now().year == date.year && 
+                          DateTime.now().month == date.month && 
+                          DateTime.now().day == date.day;
+                      final isPast = date.isBefore(DateTime.now().subtract(Duration(days: 1)));
+                      
+                      return GestureDetector(
+                        onTap: isPast ? null : () => _selectDate(date),
+                        child: AnimatedContainer(
+                          duration: Duration(milliseconds: 300),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? primaryColor
+                                : isToday
+                                    ? accentColor
+                                    : isPast
+                                        ? (isDark ? Color(0xFF1F2236) : Colors.grey[200])
+                                        : (isDark ? Color(0xFF262A43) : Colors.white),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: isSelected || isToday
+                                ? [
+                                    BoxShadow(
+                                      color: (isSelected ? primaryColor : accentColor).withOpacity(0.4),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Center(
+                            child: Text(
+                              dayIndex.toString(),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected || isToday
+                                    ? Colors.white
+                                    : isPast
+                                        ? (isDark ? Colors.white38 : Colors.black38)
+                                        : (isDark ? Colors.white : Colors.black),
+                              ),
+                            ),
+                          ),
+                        ).animate().fadeIn(duration: 100.ms, delay: (index * 20).ms),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
-
-  String _getMonthName(int month) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return months[month - 1];
-  }
-}
-
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 100);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
-    var secondEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

@@ -1,10 +1,10 @@
+// pc_list_page.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:fikzuas/main.dart';
-import 'package:fikzuas/pages/Warnet/DateSelectionPage.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:fikzuas/pages/Warnet/DateSelectionPage.dart';
 
 class PcListPage extends StatefulWidget {
   final String warnetName;
@@ -18,9 +18,10 @@ class PcListPage extends StatefulWidget {
 
 class _PcListPageState extends State<PcListPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
   List<Map<String, dynamic>> pcs = [];
+  bool isLoading = true;
+  String? errorMessage;
+  String selectedCategory = 'All';
 
   @override
   void initState() {
@@ -29,14 +30,8 @@ class _PcListPageState extends State<PcListPage> with SingleTickerProviderStateM
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
     _controller.forward();
+    _fetchPcs();
   }
 
   @override
@@ -45,334 +40,421 @@ class _PcListPageState extends State<PcListPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  Future<List<Map<String, dynamic>>> fetchPcs(int warnetId) async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/pcs?warnet_id=$warnetId'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((item) => {
-        "id_pc": item['id_pc'],
-        "pc_name": item['pc_name'],
-      }).toList();
+  Future<void> _fetchPcs() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/pcs?warnet_id=${widget.warnetId}'));
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          pcs = data.map((item) => {
+            "id_pc": item['id_pc'],
+            "pc_name": item['pc_name'],
+            "is_available": item['is_available'] ?? true,
+            "specs": item['specs'] ?? "Standard Gaming PC",
+            "category": _assignRandomCategory(), // For demo purposes
+          }).toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch PCs: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  String _assignRandomCategory() {
+    final categories = ['Gaming', 'Standard', 'Premium', 'VIP'];
+    return categories[DateTime.now().millisecond % categories.length];
+  }
+
+  List<Map<String, dynamic>> getFilteredPcs() {
+    if (selectedCategory == 'All') {
+      return pcs;
     } else {
-      throw Exception('Failed to fetch PCs');
+      return pcs.where((pc) => pc['category'] == selectedCategory).toList();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isDark = Provider.of<ThemeProvider>(context).isDark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SizedBox(
-              height: screenHeight * 0.65,
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark 
+                ? [Color(0xFF191B2F), Color(0xFF191B2F)]
+                : [Colors.white, Colors.white],
           ),
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: Padding(
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: Colors.white70,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            '${widget.warnetName}',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.grey.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.calendar_today,
-                            color: Colors.white70,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
                       child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.1)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
+                          color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          'Choose Your PC',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 20,
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
-                    ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildLegendItem(Colors.white, 'Available'),
-                          const SizedBox(width: 16),
-                          _buildLegendItem(Colors.red[300]!, 'Reserved'),
-                        ],
+                    Text(
+                      widget.warnetName,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ).animate().fadeIn(duration: 600.ms),
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 20,
                       ),
                     ),
-                    SizedBox(height: 24),
-                    FutureBuilder<List<Map<String, dynamic>>>(
-                      future: fetchPcs(widget.warnetId),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Center(child: Text('No PCs available'));
-                        } else {
-                          pcs = snapshot.data!;
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.9,
-                            ),
-                            itemCount: pcs.length,
-                            itemBuilder: (context, index) {
-                              final pc = pcs[index];
-                              final pcId = pc['id_pc'] as int;
-                              final pcName = pc['pc_name'] as String;
-                              final isAvailable = true; // Ganti dengan logika ketersediaan dari API
-
-                              return GestureDetector(
-                                onTap: isAvailable
-                                    ? () {
-                                        // Langsung navigasi ke DateSelectionPage saat PC dipilih
-                                        final pcNumber = index + 1;
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => DateSelectionPage(
-                                              warnetName: widget.warnetName,
-                                              pcNumber: pcNumber,
-                                              warnetId: widget.warnetId,
-                                              pcId: pcId,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    : null,
-                                child: AnimatedContainer(
-                                  duration: Duration(milliseconds: 300),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: isAvailable
-                                          ? [Colors.white, Colors.grey[200]!]
-                                          : [Colors.red[300]!, Colors.red[400]!],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: isAvailable ? Colors.grey.withOpacity(0.3) : Colors.red.withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.computer,
-                                        color: isAvailable ? Colors.black54 : Colors.white,
-                                        size: 28,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        pcName,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 12,
-                                          color: isAvailable ? Colors.black54 : Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ).animate().fadeIn(duration: 500.ms + (index * 40).ms).scale(),
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
-                    SizedBox(height: 24),
                   ],
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(Color color, String label) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 2),
+              
+              // PC Categories
+              Container(
+                height: 50,
+                margin: EdgeInsets.symmetric(horizontal: 16),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildCategoryChip('All', isDark, primaryColor),
+                    SizedBox(width: 8),
+                    _buildCategoryChip('Gaming', isDark, primaryColor),
+                    SizedBox(width: 8),
+                    _buildCategoryChip('Standard', isDark, primaryColor),
+                    SizedBox(width: 8),
+                    _buildCategoryChip('Premium', isDark, primaryColor),
+                    SizedBox(width: 8),
+                    _buildCategoryChip('VIP', isDark, primaryColor),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.2, end: 0),
+              
+              // Legend
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildLegendItem(Colors.green, 'Available', isDark),
+                    const SizedBox(width: 24),
+                    _buildLegendItem(Colors.red, 'Reserved', isDark),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 1000.ms),
+              
+              // PC Grid
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: primaryColor,
+                        ),
+                      )
+                    : errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red[300],
+                                  size: 48,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Error loading PCs',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  errorMessage!,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _fetchPcs,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : getFilteredPcs().isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No PCs available in this category',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: GridView.builder(
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 0.85,
+                                  ),
+                                  itemCount: getFilteredPcs().length,
+                                  itemBuilder: (context, index) {
+                                    final pc = getFilteredPcs()[index];
+                                    final pcId = pc['id_pc'] as int;
+                                    final pcName = pc['pc_name'] as String;
+                                    final isAvailable = pc['is_available'] as bool;
+                                    final specs = pc['specs'] as String;
+                                    final category = pc['category'] as String;
+                                    
+                                    return _buildPcCard(
+                                      context, 
+                                      pcId, 
+                                      pcName, 
+                                      isAvailable, 
+                                      specs, 
+                                      category,
+                                      index,
+                                      isDark,
+                                      primaryColor,
+                                      accentColor
+                                    );
+                                  },
+                                ),
+                              ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 6),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String category, bool isDark, Color primaryColor) {
+    final isSelected = selectedCategory == category;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCategory = category;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? primaryColor 
+              : (isDark ? Color(0xFF262A43) : Colors.grey[200]),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          category,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            color: isSelected 
+                ? Colors.white 
+                : (isDark ? Colors.white70 : Colors.black54),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 8),
         Text(
           label,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 12,
-            color: Colors.white70,
-            shadows: [
-              Shadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 1),
-              ),
-            ],
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.black54,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
-}
 
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 100);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
+  Widget _buildPcCard(
+    BuildContext context, 
+    int pcId, 
+    String pcName, 
+    bool isAvailable, 
+    String specs, 
+    String category,
+    int index,
+    bool isDark,
+    Color primaryColor,
+    Color accentColor
+  ) {
+    return GestureDetector(
+      onTap: isAvailable
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DateSelectionPage(
+                    warnetName: widget.warnetName,
+                    pcNumber: index + 1,
+                    warnetId: widget.warnetId,
+                    pcId: pcId,
+                    pcName: pcName,
+                    pcSpecs: specs,
+                  ),
+                ),
+              );
+            }
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Color(0xFF262A43) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Status indicator
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isAvailable 
+                    ? Colors.green.withOpacity(0.1) 
+                    : Colors.red.withOpacity(0.1),
+                border: Border.all(
+                  color: isAvailable ? Colors.green : Colors.red,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.computer_rounded,
+                  color: isAvailable ? Colors.green : Colors.red,
+                  size: 40,
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              pcName,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 4),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: accentColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                category,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: accentColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              isAvailable ? "Available" : "Reserved",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: isAvailable 
+                    ? Colors.green 
+                    : Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 600.ms, delay: (index * 50).ms).scale(delay: (index * 50).ms),
     );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
-    var secondEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
   }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

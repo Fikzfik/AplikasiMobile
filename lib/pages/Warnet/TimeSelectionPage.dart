@@ -1,35 +1,128 @@
-import 'dart:ui';
+// time_selection_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
 
-class TimeSelectionState with ChangeNotifier {
-  DateTime? selectedDate;
+class TimeSelectionPage extends StatefulWidget {
+  final String warnetName;
+  final int pcNumber;
+  final DateTime selectedDate;
+  final int warnetId;
+  final int? pcId;
+  final String pcName;
+  final String pcSpecs;
+
+  const TimeSelectionPage({
+    Key? key,
+    required this.warnetName,
+    required this.pcNumber,
+    required this.selectedDate,
+    required this.warnetId,
+    required this.pcId,
+    required this.pcName,
+    required this.pcSpecs,
+  }) : super(key: key);
+
+  @override
+  _TimeSelectionPageState createState() => _TimeSelectionPageState();
+}
+
+class _TimeSelectionPageState extends State<TimeSelectionPage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
   TimeOfDay? selectedTime;
   int? selectedDuration;
   bool isLoading = false;
   List<Map<String, dynamic>> bookedTimes = [];
+  String? errorMessage;
 
-  TimeSelectionState({this.selectedDate});
-
-  void setSelectedTime(TimeOfDay time) {
-    selectedTime = time;
-    notifyListeners();
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _controller.forward();
+    _fetchBookedTimes();
   }
 
-  void setSelectedDuration(int duration) {
-    selectedDuration = duration;
-    notifyListeners();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  void setLoading(bool value) {
-    isLoading = value;
-    notifyListeners();
+  Future<void> _fetchBookedTimes() async {
+    if (widget.pcId == null) {
+      setState(() {
+        errorMessage = 'PC ID is required';
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) {
+        setState(() {
+          errorMessage = 'Authentication required';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final url = 'http://10.0.2.2:8000/api/booked_pc?warnet_id=${widget.warnetId}&pc_id=${widget.pcId}&date=${widget.selectedDate.toIso8601String().split('T')[0]}';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        if (data is List) {
+          setState(() {
+            bookedTimes = List<Map<String, dynamic>>.from(data.map((item) {
+              return {
+                'start': TimeOfDay(
+                  hour: int.parse(item['start_time'].split(':')[0]),
+                  minute: int.parse(item['end_time'].split(':')[1]),
+                ),
+                'end': TimeOfDay(
+                  hour: int.parse(item['end_time'].split(':')[0]),
+                  minute: int.parse(item['end_time'].split(':')[1]),
+                ),
+              };
+            }));
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Response data is not a list');
+        }
+      } else {
+        throw Exception('Failed to fetch booked times: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
   }
 
   int getTotalPrice() {
@@ -38,15 +131,20 @@ class TimeSelectionState with ChangeNotifier {
 
   TimeOfDay getEndTime() {
     if (selectedTime == null || selectedDuration == null) {
-      return selectedTime ?? TimeOfDay(hour: 0, minute: 0);
+      return TimeOfDay(hour: 0, minute: 0);
     }
+    
     int endHour = selectedTime!.hour + selectedDuration!;
     int endMinute = selectedTime!.minute;
-    endHour = endHour % 24;
+    
+    if (endHour >= 24) {
+      endHour = endHour % 24;
+    }
+    
     return TimeOfDay(hour: endHour, minute: endMinute);
   }
 
-  bool isTimeSlotAvailable(BuildContext context) {
+  bool isTimeSlotAvailable() {
     if (selectedTime == null || selectedDuration == null) return false;
 
     final startMinutes = selectedTime!.hour * 60 + selectedTime!.minute;
@@ -63,7 +161,7 @@ class TimeSelectionState with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "The selected time slot (${selectedTime!.format(context)} - ${endTime.format(context)}) overlaps with an existing booking (${bookedStart.format(context)} - ${bookedEnd.format(context)})!",
+              "The selected time slot (${selectedTime!.format(context)} - ${endTime.format(context)}) overlaps with an existing booking!",
               style: TextStyle(fontFamily: 'Poppins'),
             ),
             backgroundColor: Colors.redAccent,
@@ -74,775 +172,739 @@ class TimeSelectionState with ChangeNotifier {
     }
     return true;
   }
-}
 
-class TimeSelectionPage extends StatelessWidget {
-  final String warnetName;
-  final int pcNumber;
-  final DateTime selectedDate;
-  final int warnetId;
-  final int? pcId;
-
-  const TimeSelectionPage({
-    Key? key,
-    required this.warnetName,
-    required this.pcNumber,
-    required this.selectedDate,
-    required this.warnetId,
-    required this.pcId,
-  }) : super(key: key);
-
-  Future<List<Map<String, dynamic>>> _fetchBookedTimes(int warnetId, int? pcId, DateTime date, String? token) async {
-    if (pcId == null) {
-      debugPrint('Error: pcId is null');
-      throw Exception('pcId is required');
+  Future<void> _bookSlot() async {
+    if (selectedTime == null || selectedDuration == null || widget.pcId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Please select time and duration!",
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
     }
 
-    debugPrint('Fetching booked times...');
-    debugPrint('warnetId: $warnetId');
-    debugPrint('pcId: $pcId');
-    debugPrint('date: ${date.toIso8601String().split('T')[0]}');
+    if (!isTimeSlotAvailable()) {
+      return;
+    }
 
-    final url = 'http://10.0.2.2:8000/api/booked_pc?warnet_id=$warnetId&pc_id=$pcId&date=${date.toIso8601String().split('T')[0]}';
-    debugPrint('Request URL: $url');
+    setState(() {
+      isLoading = true;
+    });
 
     try {
-      final response = await http.get(
-        Uri.parse(url),
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final userId = prefs.getInt('id_user');
+      
+      if (token == null || userId == null) {
+        throw Exception('Authentication required');
+      }
+
+      final startTime = DateTime(
+        widget.selectedDate.year,
+        widget.selectedDate.month,
+        widget.selectedDate.day,
+        selectedTime!.hour,
+        selectedTime!.minute,
+      );
+      
+      final endTime = startTime.add(Duration(hours: selectedDuration!));
+      final totalPrice = getTotalPrice();
+
+      final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+      final formattedStartTime = dateFormat.format(startTime);
+      final formattedEndTime = dateFormat.format(endTime);
+
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/api/book_pcs'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        body: jsonEncode({
+          'pc_id': widget.pcId,
+          'id_user': userId,
+          'start_time': formattedStartTime,
+          'end_time': formattedEndTime,
+          'booking_status': 'confirmed',
+          'amount': totalPrice,
+        }),
       );
-      debugPrint('Response status code: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        debugPrint('Decoded data: $data');
-
-        if (data is List) {
-          return List<Map<String, dynamic>>.from(data.map((item) {
-            debugPrint('Processing item: $item');
-            return {
-              'start': TimeOfDay(
-                hour: int.parse(item['start_time'].split(':')[0]),
-                minute: int.parse(item['start_time'].split(':')[1]),
-              ),
-              'end': TimeOfDay(
-                hour: int.parse(item['end_time'].split(':')[0]),
-                minute: int.parse(item['end_time'].split(':')[1]),
-              ),
-            };
-          }));
-        } else {
-          debugPrint('Error: Response data is not a list');
-          throw Exception('Response data is not a list');
-        }
-      } else {
-        debugPrint('Error: Failed to fetch booked times with status code ${response.statusCode}');
-        throw Exception('Failed to fetch booked times: ${response.statusCode} - ${response.body}');
+      if (response.statusCode != 201) {
+        throw Exception('Failed to book slot: ${response.statusCode}');
       }
+
+      Navigator.pushNamedAndRemoveUntil(
+        context, 
+        '/history', 
+        (route) => route.settings.name == '/home',
+        arguments: {'refreshOnLoad': true},
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Booking confirmed! Your PC is reserved for ${selectedDuration} hours.",
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
     } catch (e) {
-      debugPrint('Exception caught: $e');
-      rethrow;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Failed to book: $e",
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
-  }
-
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
-  }
-
-  Future<int?> _getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('id_user');
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentDateTime = DateTime(2025, 6, 1, 21, 37); // 09:37 PM WIB, 01 Juni 2025
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
-    if (pcId == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(
-            'Error: PC ID is not provided. Please go back and select a PC.',
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark 
+                ? [Color(0xFF191B2F), Color(0xFF191B2F)]
+                : [Colors.white, Colors.white],
           ),
         ),
-      );
-    }
-
-    return FutureBuilder<Map<String, dynamic>>(
-      future: Future.wait([
-        _getToken(),
-        _getUserId(),
-      ]).then((results) => {'token': results[0], 'userId': results[1]}),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!['token'] == null || snapshot.data!['userId'] == null) {
-          return Scaffold(
-            body: Center(
-              child: Text(
-                'Please login to continue.',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
-              ),
-            ),
-          );
-        }
-
-        final String token = snapshot.data!['token'];
-        final int userId = snapshot.data!['userId'];
-
-        return ChangeNotifierProvider(
-          create: (_) => TimeSelectionState(selectedDate: selectedDate),
-          child: Consumer<TimeSelectionState>(
-            builder: (context, timeState, child) {
-              return Scaffold(
-                body: FutureBuilder<List<Map<String, dynamic>>>(
-                  future: _fetchBookedTimes(warnetId, pcId, selectedDate, token),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      debugPrint('FutureBuilder error: ${snapshot.error}');
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      debugPrint('No bookings found for this date.');
-                      return _buildBookingForm(context, timeState, token, userId, []);
-                    } else {
-                      timeState.bookedTimes = snapshot.data!;
-                      debugPrint('Booked times loaded: ${timeState.bookedTimes}');
-                      return _buildBookingForm(context, timeState, token, userId, snapshot.data!);
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBookingForm(BuildContext context, TimeSelectionState timeState, String token, int userId, List<Map<String, dynamic>> bookedTimes) {
-    final currentDateTime = DateTime(2025, 6, 1, 21, 37); // 09:37 PM WIB, 01 Juni 2025
-
-    return Stack(
-      children: [
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.65,
-            child: ClipPath(
-              clipper: WaveClipper(),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: Theme.of(context).brightness == Brightness.dark
-                        ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                        : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.0, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white70,
-                        shadows: [
-                          Shadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ],
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Text(
-                      'Select Booking Time',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.grey.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                          child: Icon(
+                            Icons.arrow_back_ios_rounded,
+                            color: isDark ? Colors.white : Colors.black,
+                            size: 20,
                           ),
-                        ],
+                        ),
                       ),
-                    ).animate().fadeIn(duration: 600.ms),
-                    SizedBox(width: 48),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Booking PC $pcNumber at $warnetName on ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 600.ms),
-                SizedBox(height: 16),
-                bookedTimes.isEmpty
-                    ? Text(
-                        "No bookings yet for this date.",
+                      Text(
+                        "Select Time",
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 16,
-                          color: Colors.white70,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
-                      ).animate().fadeIn(duration: 600.ms)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Booked Times:",
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ).animate().fadeIn(duration: 600.ms),
-                          SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8.0,
-                            runSpacing: 4.0,
-                            children: bookedTimes.map((booking) {
-                              final start = booking['start'] as TimeOfDay;
-                              final end = booking['end'] as TimeOfDay;
-                              return Chip(
-                                label: Text(
-                                  "${start.format(context)} - ${end.format(context)}",
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                backgroundColor: Colors.redAccent,
-                                elevation: 2,
-                                shadowColor: Colors.black26,
-                              ).animate().fadeIn(duration: 600.ms);
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                SizedBox(height: 24),
-                GestureDetector(
-                  onTap: () async {
-                    final time = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
-                    if (time != null) {
-                      final selectedDateTime = DateTime(
-                        selectedDate.year,
-                        selectedDate.month,
-                        selectedDate.day,
-                        time.hour,
-                        time.minute,
-                      );
-                      if (selectedDateTime.isBefore(currentDateTime)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Cannot book a time in the past.',
-                              style: TextStyle(fontFamily: 'Poppins'),
-                            ),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        return;
-                      }
-                      timeState.setSelectedTime(time);
-                    }
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      ).animate().fadeIn(duration: 600.ms),
+                      SizedBox(width: 40),
+                    ],
+                  ),
+                  
+                  SizedBox(height: 24),
+                  
+                  // Booking info card
+                  Container(
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.blueAccent.withOpacity(0.5),
-                        width: 2,
-                      ),
-                      gradient: LinearGradient(
-                        colors: Theme.of(context).brightness == Brightness.dark
-                            ? [Color(0xFF1A1440), Color(0xFF262A50)]
-                            : [Colors.grey[300]!, Colors.grey[200]!],
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.access_time, color: Colors.blueAccent, size: 20),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            timeState.selectedTime == null
-                                ? "Select Time"
-                                : timeState.selectedTime!.format(context),
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              color: timeState.selectedTime == null
-                                  ? (Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white70
-                                      : Colors.black54)
-                                  : (Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black87),
-                              fontWeight: timeState.selectedTime == null
-                                  ? FontWeight.normal
-                                  : FontWeight.w500,
-                            ),
-                          ),
+                      color: isDark ? Color(0xFF262A43) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
                         ),
                       ],
                     ),
-                  ),
-                ).animate().slideX(duration: 500.ms, begin: -0.5, end: 0.0),
-                SizedBox(height: 16),
-                TextField(
-                  onChanged: (value) {
-                    final duration = int.tryParse(value) ?? 0;
-                    if (duration > 0) {
-                      timeState.setSelectedDuration(duration);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Duration (hours)",
-                    labelStyle: TextStyle(
-                      fontFamily: "Poppins",
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white70
-                          : Colors.black54,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.computer_rounded,
+                                color: primaryColor,
+                                size: 28,
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.pcName,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                  Text(
+                                    widget.warnetName,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 14,
+                                      color: isDark ? Colors.white60 : Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        Divider(color: isDark ? Colors.white12 : Colors.black12),
+                        SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              color: isDark ? Colors.white60 : Colors.black54,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              DateFormat('EEEE, MMMM d, yyyy').format(widget.selectedDate),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.memory_rounded,
+                              color: isDark ? Colors.white60 : Colors.black54,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.pcSpecs,
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white60 : Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    prefixIcon: Icon(Icons.hourglass_empty, color: Colors.blueAccent),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent.withOpacity(0.5),
-                        width: 2,
+                  ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.2, end: 0),
+                  
+                  SizedBox(height: 24),
+                  
+                  // Booked times section
+                  if (isLoading)
+                    Center(
+                      child: CircularProgressIndicator(
+                        color: primaryColor,
                       ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent.withOpacity(0.5),
-                        width: 2,
+                    )
+                  else if (errorMessage != null)
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark
-                        ? Color(0xFF1A1440)
-                        : Colors.grey[300],
-                  ),
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                ).animate().slideX(duration: 500.ms, begin: -0.5, end: 0.0, delay: 100.ms),
-                SizedBox(height: 12),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.blueAccent.withOpacity(0.5),
-                      width: 2,
-                    ),
-                    gradient: LinearGradient(
-                      colors: Theme.of(context).brightness == Brightness.dark
-                          ? [Color(0xFF1A1440), Color(0xFF262A50)]
-                          : [Colors.grey[300]!, Colors.grey[200]!],
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.account_balance_wallet, color: Colors.blueAccent),
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 12),
-                          Text(
-                            "Total Price",
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white70
-                                  : Colors.black54,
+                          Expanded(
+                            child: Text(
+                              "Error: $errorMessage",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Colors.red,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      Text(
-                        "IDR ${timeState.getTotalPrice()}",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().slideX(duration: 500.ms, begin: -0.5, end: 0.0, delay: 200.ms),
-                SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    child: ElevatedButton(
-                      onPressed: timeState.selectedTime != null && timeState.selectedDuration != null
-                          ? () {
-                              if (timeState.isTimeSlotAvailable(context)) {
-                                timeState.setLoading(true);
-                                _showPaymentDialog(context, timeState, warnetName, pcNumber, selectedDate, pcId, token, userId);
-                              }
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: timeState.selectedTime != null && timeState.selectedDuration != null
-                                ? [Colors.purpleAccent, Colors.blueAccent]
-                                : [Colors.grey[600]!, Colors.grey[700]!],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Already Booked Times",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: timeState.selectedTime != null && timeState.selectedDuration != null
-                                  ? Colors.purpleAccent.withOpacity(0.4)
-                                  : Colors.grey.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
+                        ).animate().fadeIn(duration: 1000.ms),
+                        SizedBox(height: 12),
+                        bookedTimes.isEmpty
+                            ? Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_outline,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      "No bookings yet for this date!",
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ).animate().fadeIn(duration: 1000.ms)
+                            : Container(
+                                height: 60,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: bookedTimes.length,
+                                  itemBuilder: (context, index) {
+                                    final booking = bookedTimes[index];
+                                    final start = booking['start'] as TimeOfDay;
+                                    final end = booking['end'] as TimeOfDay;
+                                    
+                                    return Container(
+                                      margin: EdgeInsets.only(right: 12),
+                                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.red.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.access_time_filled_rounded,
+                                            color: Colors.red,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            "${start.format(context)} - ${end.format(context)}",
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ).animate().fadeIn(duration: 1000.ms + (index * 100).ms);
+                                  },
+                                ),
+                              ),
+                      ],
+                    ),
+                  
+                  SizedBox(height: 24),
+                  
+                  // Time & Duration selection
+                  Text(
+                    "Select Time & Duration",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ).animate().fadeIn(duration: 1200.ms),
+                  SizedBox(height: 16),
+                  
+                  // Time selection
+                  GestureDetector(
+                    onTap: () async {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.dark(
+                                primary: primaryColor,
+                                onPrimary: Colors.white,
+                                surface: isDark ? Color(0xFF262A43) : Colors.grey[900]!,
+                                onSurface: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      
+                      if (time != null) {
+                        setState(() {
+                          selectedTime = time;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? Color(0xFF262A43) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? Colors.white12 : Colors.black12,
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                          SizedBox(width: 16),
+                          Text(
+                            selectedTime == null
+                                ? "Select Start Time"
+                                : "Start Time: ${selectedTime!.format(context)}",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          Spacer(),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ).animate().fadeIn(duration: 1300.ms).slideX(begin: -0.1, end: 0),
+                  
+                  SizedBox(height: 16),
+                  
+                  // Duration selection
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Color(0xFF262A43) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.hourglass_top_rounded,
+                              color: primaryColor,
+                              size: 24,
+                            ),
+                            SizedBox(width: 16),
+                            Text(
+                              "Duration (hours)",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
                             ),
                           ],
                         ),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                          child: Center(
-                            child: timeState.isLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    'Next',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.grey.withOpacity(0.3),
-                                          blurRadius: 6,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [1, 2, 3, 4, 5].map((hours) {
+                            final isSelected = selectedDuration == hours;
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedDuration = hours;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: Duration(milliseconds: 200),
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? primaryColor
+                                      : (isDark ? Color(0xFF1F2236) : Colors.grey[200]),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: primaryColor.withOpacity(0.4),
+                                            blurRadius: 8,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ]
+                                      : [],
+                                ),
+                                child: Text(
+                                  "$hours h",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark ? Colors.white : Colors.black),
                                   ),
-                          ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
-                      ),
+                      ],
                     ),
-                  ).animate().fadeIn(duration: 600.ms).scale(),
-                ),
-              ],
+                  ).animate().fadeIn(duration: 1400.ms).slideX(begin: -0.1, end: 0),
+                  
+                  SizedBox(height: 24),
+                  
+                  // Booking summary
+                  if (selectedTime != null && selectedDuration != null)
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? Color(0xFF262A43) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? Colors.white12 : Colors.black12,
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Booking Summary",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          _buildSummaryRow(
+                            "Date",
+                            DateFormat('EEEE, MMMM d, yyyy').format(widget.selectedDate),
+                            Icons.calendar_today_rounded,
+                            isDark,
+                          ),
+                          SizedBox(height: 8),
+                          _buildSummaryRow(
+                            "Time",
+                            "${selectedTime!.format(context)} - ${getEndTime().format(context)}",
+                            Icons.access_time_rounded,
+                            isDark,
+                          ),
+                          SizedBox(height: 8),
+                          _buildSummaryRow(
+                            "Duration",
+                            "$selectedDuration hours",
+                            Icons.hourglass_top_rounded,
+                            isDark,
+                          ),
+                          SizedBox(height: 8),
+                          _buildSummaryRow(
+                            "PC",
+                            widget.pcName,
+                            Icons.computer_rounded,
+                            isDark,
+                          ),
+                          SizedBox(height: 16),
+                          Divider(color: isDark ? Colors.white12 : Colors.black12),
+                          SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Total Price",
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.black,
+                                ),
+                              ),
+                              Text(
+                                "IDR ${getTotalPrice()}",
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: accentColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(duration: 1500.ms).scale(begin: Offset(0.95, 0.95)),
+                  
+                  SizedBox(height: 32),
+                  
+                  // Book Now button
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedTime != null && selectedDuration != null && !isLoading
+                          ? _bookSlot
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        disabledBackgroundColor: isDark ? Colors.white24 : Colors.grey[300],
+                      ),
+                      child: isLoading
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              "Book Now",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ).animate().fadeIn(duration: 1600.ms).slideY(begin: 0.2, end: 0),
+                  
+                  SizedBox(height: 32),
+                ],
+              ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: isDark ? Colors.white60 : Colors.black54,
+          size: 18,
+        ),
+        SizedBox(width: 12),
+        Text(
+          "$label:",
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            textAlign: TextAlign.right,
           ),
         ),
       ],
     );
-  }
-
-  void _showPaymentDialog(BuildContext context, TimeSelectionState timeState, String warnetName, int pcNumber, DateTime selectedDate, int? pcId, String token, int userId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
-        final lightModeBackground = Color.alphaBlend(
-          Colors.black.withOpacity(0.15),
-          Colors.grey[200]!,
-        );
-
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 350,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [Color(0xFF262A50), Color(0xFF1A1440)]
-                    : [lightModeBackground, lightModeBackground],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "Payment via QRIS",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ).animate().fadeIn(duration: 400.ms),
-                      SizedBox(height: 12),
-                      AnimatedContainer(
-                        duration: Duration(milliseconds: 300),
-                        height: 4,
-                        width: 300,
-                        decoration: BoxDecoration(
-                          color: isDark ? Color(0xFF1A1440) : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
-                            width: 300,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.blueAccent, Colors.pinkAccent],
-                              ),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ).animate().fadeIn(duration: 500.ms),
-                      SizedBox(height: 16),
-                      Text(
-                        "Scan the QR code below to pay:",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 16,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isDark ? Colors.white70 : Colors.black54,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "QRIS Placeholder",
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              color: isDark ? Colors.white70 : Colors.black54,
-                            ),
-                          ),
-                        ),
-                      ).animate().fadeIn(duration: 600.ms),
-                      SizedBox(height: 16),
-                      Text(
-                        "Total: IDR ${timeState.getTotalPrice()}",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (timeState.selectedTime != null && timeState.selectedDuration != null && pcId != null) {
-                            timeState.setLoading(true);
-                            try {
-                              await _bookSlotToDatabase(context, timeState, pcId, selectedDate, token, userId);
-                              Navigator.pop(context); // Tutup dialog pembayaran
-                              Navigator.pushNamed(context, '/history', arguments: {'refreshOnLoad': true});
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Payment confirmed! Rental for PC $pcNumber at $warnetName has been booked. Total: IDR ${timeState.getTotalPrice()}",
-                                    style: TextStyle(fontFamily: 'Poppins'),
-                                  ),
-                                  backgroundColor: Colors.green[700],
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Failed to book: $e",
-                                    style: TextStyle(fontFamily: 'Poppins'),
-                                  ),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                            } finally {
-                              timeState.setLoading(false);
-                            }
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Please select time and duration!",
-                                  style: TextStyle(fontFamily: 'Poppins'),
-                                ),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: timeState.isLoading
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                "Confirm Payment",
-                                style: TextStyle(
-                                  fontFamily: "Poppins",
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ).animate().fadeIn(duration: 600.ms),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ).animate().scale(duration: 500.ms, curve: Curves.easeOut).fadeIn(duration: 400.ms);
-      },
-    );
-  }
-
-  Future<void> _bookSlotToDatabase(BuildContext context, TimeSelectionState timeState, int pcId, DateTime selectedDate, String token, int userId) async {
-    final startTime = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      timeState.selectedTime!.hour,
-      timeState.selectedTime!.minute,
-    );
-    final endTime = startTime.add(Duration(hours: timeState.selectedDuration ?? 0));
-    final totalPrice = timeState.getTotalPrice();
-
-    final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
-    final formattedStartTime = dateFormat.format(startTime);
-    final formattedEndTime = dateFormat.format(endTime);
-
-    final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/book_pcs'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({
-        'pc_id': pcId,
-        'id_user': userId,
-        'start_time': formattedStartTime,
-        'end_time': formattedEndTime,
-        'booking_status': 'confirmed',
-        'amount': totalPrice,
-      }),
-    );
-
-    if (response.statusCode != 201) {
-      throw Exception('Failed to book slot: ${response.statusCode} - ${response.body}');
-    }
   }
 }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/main.dart';
-import 'package:fikzuas/pages/Warnet/DateSelectionPSPage.dart'; // Updated import
+import 'package:fikzuas/pages/Warnet/DateSelectionPSPage.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -19,8 +19,9 @@ class PsListPage extends StatefulWidget {
 class _PsListPageState extends State<PsListPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
   List<Map<String, dynamic>> pss = [];
+  bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -33,10 +34,8 @@ class _PsListPageState extends State<PsListPage> with SingleTickerProviderStateM
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
     _controller.forward();
+    _fetchPss();
   }
 
   @override
@@ -45,300 +44,331 @@ class _PsListPageState extends State<PsListPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  Future<List<Map<String, dynamic>>> fetchPss(int warnetId) async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/playstations?warnet_id=$warnetId'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((item) => {
-        "id_ps": item['id_playstation'],
-        "ps_name": item['ps_name'],
-      }).toList();
-    } else {
-      throw Exception('Failed to fetch PlayStations');
+  Future<void> _fetchPss() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/playstations?warnet_id=${widget.warnetId}'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          pss = data.map((item) => {
+            "id_ps": item['id_playstation'],
+            "ps_name": item['ps_name'],
+            "is_available": item['is_available'] ?? true, // Assuming API has this field
+          }).toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch PlayStations: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final isDark = Provider.of<ThemeProvider>(context).isDark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SizedBox(
-              height: screenHeight * 0.65,
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [Color(0xFF191B2F), Color(0xFF191B2F)]
+                : [Colors.white, Colors.white],
           ),
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: Padding(
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: Colors.white70,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          onPressed: () => Navigator.pop(context),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            '${widget.warnetName}',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.grey.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 20,
                         ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.calendar_today,
-                            color: Colors.white70,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          onPressed: () {},
-                        ),
-                      ],
+                      ),
                     ),
-                    SizedBox(height: 16),
                     FadeTransition(
                       opacity: _fadeAnimation,
-                      child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.1)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          'Choose Your PlayStation',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                      child: Text(
+                        widget.warnetName,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
-                    ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildLegendItem(Colors.white, 'Available'),
-                          const SizedBox(width: 16),
-                          _buildLegendItem(Colors.red[300]!, 'Reserved'),
-                        ],
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 20,
                       ),
                     ),
-                    SizedBox(height: 24),
-                    FutureBuilder<List<Map<String, dynamic>>>(
-                      future: fetchPss(widget.warnetId),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Center(child: Text('No PlayStations available'));
-                        } else {
-                          pss = snapshot.data!;
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.9,
-                            ),
-                            itemCount: pss.length,
-                            itemBuilder: (context, index) {
-                              final ps = pss[index];
-                              final psId = ps['id_ps'] as int;
-                              final psName = ps['ps_name'] as String;
-                              final isAvailable = true; // Replace with availability logic from API
-
-                              return GestureDetector(
-                                onTap: isAvailable
-                                    ? () {
-                                        final psNumber = index + 1;
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => DateSelectionPSPage(
-                                              warnetName: widget.warnetName,
-                                              psNumber: psNumber,
-                                              warnetId: widget.warnetId,
-                                              psId: psId,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    : null,
-                                child: AnimatedContainer(
-                                  duration: Duration(milliseconds: 300),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: isAvailable
-                                          ? [Colors.white, Colors.grey[200]!]
-                                          : [Colors.red[300]!, Colors.red[400]!],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: isAvailable ? Colors.grey.withOpacity(0.3) : Colors.red.withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.gamepad,
-                                        color: isAvailable ? Colors.black54 : Colors.white,
-                                        size: 28,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        psName,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 12,
-                                          color: isAvailable ? Colors.black54 : Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ).animate().fadeIn(duration: 500.ms + (index * 40).ms).scale(),
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
-                    SizedBox(height: 24),
                   ],
                 ),
               ),
-            ),
+
+              // Legend
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildLegendItem(Colors.green, 'Available', isDark),
+                    const SizedBox(width: 24),
+                    _buildLegendItem(Colors.red, 'Reserved', isDark),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 1000.ms),
+
+              // PS Grid
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: primaryColor,
+                        ),
+                      )
+                    : errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red[300],
+                                  size: 48,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Error loading PlayStations',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  errorMessage!,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _fetchPss,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : pss.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No PlayStations available',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: GridView.builder(
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 0.85,
+                                  ),
+                                  itemCount: pss.length,
+                                  itemBuilder: (context, index) {
+                                    final ps = pss[index];
+                                    final psId = ps['id_ps'] as int;
+                                    final psName = ps['ps_name'] as String;
+                                    final isAvailable = ps['is_available'] as bool;
+
+                                    return _buildPsCard(
+                                      context,
+                                      psId,
+                                      psName,
+                                      isAvailable,
+                                      index,
+                                      isDark,
+                                      primaryColor,
+                                      accentColor,
+                                    );
+                                  },
+                                ),
+                              ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildLegendItem(Color color, String label) {
+  Widget _buildLegendItem(Color color, String label, bool isDark) {
     return Row(
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
             color: color,
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
+            shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 8),
         Text(
           label,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 12,
-            color: Colors.white70,
-            shadows: [
-              Shadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 1),
-              ),
-            ],
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.black54,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPsCard(
+    BuildContext context,
+    int psId,
+    String psName,
+    bool isAvailable,
+    int index,
+    bool isDark,
+    Color primaryColor,
+    Color accentColor,
+  ) {
+    return GestureDetector(
+      onTap: isAvailable
+          ? () {
+              final psNumber = index + 1;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DateSelectionPSPage(
+                    warnetName: widget.warnetName,
+                    psNumber: psNumber,
+                    warnetId: widget.warnetId,
+                    psId: psId,
+                  ),
+                ),
+              );
+            }
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Color(0xFF262A43) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Status indicator
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isAvailable
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                border: Border.all(
+                  color: isAvailable ? Colors.green : Colors.red,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.gamepad,
+                  color: isAvailable ? Colors.green : Colors.red,
+                  size: 40,
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              psName,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              isAvailable ? "Available" : "Reserved",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: isAvailable ? Colors.green : Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 600.ms, delay: (index * 50).ms).scale(delay: (index * 50).ms),
     );
   }
 }

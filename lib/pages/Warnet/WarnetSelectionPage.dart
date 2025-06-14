@@ -1,171 +1,340 @@
-import 'package:fikzuas/booking_state.dart';
+// warnet_selection_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:fikzuas/pages/Warnet/PcListPage.dart';
-import 'package:fikzuas/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:fikzuas/booking_state.dart';
+import 'package:fikzuas/pages/Warnet/PcListPage.dart';
 
+class WarnetSelectionPage extends StatefulWidget {
+  @override
+  _WarnetSelectionPageState createState() => _WarnetSelectionPageState();
+}
 
+class _WarnetSelectionPageState extends State<WarnetSelectionPage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  String searchQuery = '';
+  bool isLoading = false;
+  List<Map<String, dynamic>> allWarnets = [];
+  List<Map<String, dynamic>> filteredWarnets = [];
+  String? errorMessage;
+  
+  // Filter options
+  String sortBy = 'rating'; // 'rating', 'name', 'availablePcs'
+  bool showOnlyAvailable = false;
 
-class WarnetSelectionPage extends StatelessWidget {
-  Future<List<Map<String, dynamic>>> fetchWarnetData() async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/warnets'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((item) => {
-        "id": item['id_warnet'], // Tambahkan id_warnet
-        "name": item['warnet_name'],
-        "address": item['address'],
-        "availablePcs": item['total_pcs'],
-        "rating": item['stars'] != null ? double.parse(item['stars']) : 0.0,
-        "image": "assets/img/net${(data.indexOf(item) % 3) + 1}.png",
-      }).toList();
-    } else {
-      print(response);
-      throw Exception('Gagal memuat data warnet');
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _controller.forward();
+    _fetchWarnets();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchWarnets() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/warnets'));
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        
+        setState(() {
+          allWarnets = data.map((item) => {
+            "id": item['id_warnet'],
+            "name": item['warnet_name'],
+            "address": item['address'],
+            "availablePcs": item['total_pcs'],
+            "rating": item['stars'] != null ? double.parse(item['stars'].toString()) : 0.0,
+            "image": "assets/img/net${(data.indexOf(item) % 3) + 1}.png",
+            "description": item['description'] ?? "Premium gaming center with high-end PCs and fast internet connection.",
+            "openHours": item['open_hours'] ?? "24/7",
+            "pricePerHour": item['price_per_hour'] ?? 10000,
+          }).toList();
+          
+          _applyFilters();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load warnets: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
     }
+  }
+
+  void _applyFilters() {
+    List<Map<String, dynamic>> result = List.from(allWarnets);
+    
+    // Apply search filter
+    if (searchQuery.isNotEmpty) {
+      result = result.where((warnet) => 
+        warnet['name'].toString().toLowerCase().contains(searchQuery.toLowerCase()) ||
+        warnet['address'].toString().toLowerCase().contains(searchQuery.toLowerCase())
+      ).toList();
+    }
+    
+    // Apply availability filter
+    if (showOnlyAvailable) {
+      result = result.where((warnet) => warnet['availablePcs'] > 0).toList();
+    }
+    
+    // Apply sorting
+    switch (sortBy) {
+      case 'rating':
+        result.sort((a, b) => (b['rating'] as double).compareTo(a['rating'] as double));
+        break;
+      case 'name':
+        result.sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
+        break;
+      case 'availablePcs':
+        result.sort((a, b) => (b['availablePcs'] as int).compareTo(a['availablePcs'] as int));
+        break;
+    }
+    
+    setState(() {
+      filteredWarnets = result;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'My Warnet',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : theme.colorScheme.primary,
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                isDark ? Icons.light_mode : Icons.dark_mode,
-                color: isDark ? Colors.white70 : theme.colorScheme.primary,
-              ),
-              onPressed: () {
-                // Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-              },
-            ),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark 
+                ? [Color(0xFF191B2F), Color(0xFF191B2F)]
+                : [Colors.white, Colors.white],
+          ),
         ),
-        backgroundColor: isDark ? Color(0xFF2C2F50) : Colors.blue,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Background dengan WaveClipper
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.65,
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [Color(0xFF2C2F50), Color(0xFF1A1D40).withOpacity(0.9)]
-                          : [Color(0xFF3A3D60), Color(0xFF2C2F50).withOpacity(0.85)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 1.0],
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      "Find Warnet",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ).animate().fadeIn(duration: 600.ms),
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        color: isDark ? Colors.white : Colors.black,
+                        size: 20,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-          // Konten utama
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 8),
-                  // Search Bar
-                  Container(
-                    margin: EdgeInsets.symmetric(vertical: 8.0),
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Color(0xFF2C2F50).withOpacity(0.3)
-                          : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(25.0),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search,
-                            color: isDark ? Colors.white70 : Colors.black54),
-                        SizedBox(width: 8.0),
-                        Expanded(
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search warnet...',
-                              hintStyle: TextStyle(
-                                fontFamily: 'Poppins',
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
-                              border: InputBorder.none,
+              
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              searchQuery = value;
+                              _applyFilters();
+                            });
+                          },
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search warnet...',
+                            hintStyle: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: isDark ? Colors.white38 : Colors.black38,
                             ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 16),
                           ),
                         ),
-                        Icon(Icons.tune,
-                            color: isDark ? Colors.white70 : Colors.black54),
-                      ],
-                    ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.tune_rounded,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                        onPressed: _showFilterDialog,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 16.0),
-                  // FutureBuilder untuk daftar warnet
-                  Expanded(
-                    child: FutureBuilder<List<Map<String, dynamic>>>(
-                      future: fetchWarnetData(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Center(child: Text('No warnet available'));
-                        } else {
-                          final warnetList = snapshot.data!;
-                          return ListView.builder(
-                            padding: EdgeInsets.only(bottom: 16.0),
-                            itemCount: warnetList.length,
-                            itemBuilder: (context, index) {
-                              final warnet = warnetList[index];
-                              return _buildWarnetCard(context, warnet, theme, isDark);
-                            },
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                ),
+              ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.2, end: 0),
+              
+              SizedBox(height: 16),
+              
+              // Warnet list
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: primaryColor,
+                        ),
+                      )
+                    : errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  color: Colors.red[300],
+                                  size: 48,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Error loading warnets',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  errorMessage!,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _fetchWarnets,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : filteredWarnets.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.search_off_rounded,
+                                      color: isDark ? Colors.white70 : Colors.black54,
+                                      size: 48,
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'No warnets found',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 18,
+                                        color: isDark ? Colors.white : Colors.black,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Try changing your search or filters',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 14,
+                                        color: isDark ? Colors.white70 : Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                itemCount: filteredWarnets.length,
+                                itemBuilder: (context, index) {
+                                  final warnet = filteredWarnets[index];
+                                  return _buildWarnetCard(context, warnet, index, isDark, primaryColor, accentColor);
+                                },
+                              ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildWarnetCard(BuildContext context, Map<String, dynamic> warnet,
-      ThemeData theme, bool isDark) {
+  Widget _buildWarnetCard(BuildContext context, Map<String, dynamic> warnet, int index, bool isDark, Color primaryColor, Color accentColor) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -176,132 +345,353 @@ class WarnetSelectionPage extends StatelessWidget {
                 ..initializePcSlots(warnet["name"], warnet["availablePcs"]),
               child: PcListPage(
                 warnetName: warnet["name"],
-                warnetId: warnet["id"], // Kirim id_warnet
+                warnetId: warnet["id"],
               ),
             ),
           ),
         );
       },
-      child: Card(
-        elevation: theme.cardTheme.elevation ?? 5,
-        shape: theme.cardTheme.shape,
-        margin: EdgeInsets.only(bottom: 16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Gambar Warnet
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(15.0)),
-                child: Image.asset(
-                  warnet["image"],
-                  height: 150.0,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 150.0,
-                      color: Colors.grey,
-                      child: Center(child: Text('Image not found')),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          warnet["name"],
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: isDark ? Color(0xFF262A43) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Warnet image with rating overlay
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  child: Image.asset(
+                    warnet["image"],
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 180,
+                        color: isDark ? Color(0xFF1F2236) : Colors.grey[300],
+                        child: Center(
+                          child: Icon(
+                            Icons.image_not_supported_rounded,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                            size: 48,
                           ),
                         ),
-                        Row(
-                          children: [
-                            Text(
-                              '${warnet["rating"]}',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontFamily: 'Poppins',
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
-                            ),
-                            Icon(
-                              Icons.star,
-                              size: 16.0,
-                              color: Colors.amber,
-                            ),
-                          ],
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          warnet["rating"].toStringAsFixed(1),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 4.0),
-                    Text(
-                      warnet["address"],
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontFamily: 'Poppins',
-                        color: isDark ? Colors.white54 : Colors.black54,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 8.0),
-                    Text(
-                      'Available PCs: ${warnet["availablePcs"]}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontFamily: 'Poppins',
-                        color: isDark ? Colors.white70 : Colors.black54,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+            
+            // Warnet details
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    warnet["name"],
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                        size: 16,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          warnet["address"],
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: isDark ? Colors.white60 : Colors.black54,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _buildInfoChip(
+                        icon: Icons.computer_rounded,
+                        label: "${warnet["availablePcs"]} PCs",
+                        color: primaryColor,
+                        isDark: isDark,
+                      ),
+                      SizedBox(width: 8),
+                      _buildInfoChip(
+                        icon: Icons.access_time_rounded,
+                        label: warnet["openHours"],
+                        color: accentColor,
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChangeNotifierProvider(
+                            create: (_) => BookingState()
+                              ..initializePcSlots(warnet["name"], warnet["availablePcs"]),
+                            child: PcListPage(
+                              warnetName: warnet["name"],
+                              warnetId: warnet["id"],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: Size(double.infinity, 48),
+                    ),
+                    child: Text(
+                      "Select",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ).animate().fadeIn(duration: 600.ms, delay: (index * 100).ms).slideY(begin: 0.1, end: 0, delay: (index * 100).ms),
+    );
+  }
+
+  Widget _buildInfoChip({required IconData icon, required String label, required Color color, required bool isDark}) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 16,
+          ),
+          SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 100);
-
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
+  void _showFilterDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+        
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDark ? Color(0xFF191B2F) : Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Filter & Sort",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "Sort by",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _buildSortChip('Rating', 'rating', setModalState, isDark, primaryColor),
+                      _buildSortChip('Name', 'name', setModalState, isDark, primaryColor),
+                      _buildSortChip('Available PCs', 'availablePcs', setModalState, isDark, primaryColor),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Switch(
+                        value: showOnlyAvailable,
+                        onChanged: (value) {
+                          setModalState(() {
+                            showOnlyAvailable = value;
+                          });
+                        },
+                        activeColor: primaryColor,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        "Show only available",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _applyFilters();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        "Apply Filters",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 150);
-    var secondEndPoint = Offset(size.width, size.height - 100);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
   }
 
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+  Widget _buildSortChip(String label, String value, StateSetter setModalState, bool isDark, Color primaryColor) {
+    final isSelected = sortBy == value;
+    
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setModalState(() {
+            sortBy = value;
+          });
+        }
+      },
+      backgroundColor: isDark ? Color(0xFF262A43) : Colors.grey[200],
+      selectedColor: primaryColor,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+        fontFamily: 'Poppins',
+      ),
+    );
+  }
 }

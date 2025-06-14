@@ -33,8 +33,7 @@ class TimeSelectionState with ChangeNotifier {
   }
 
   int getTotalPrice() {
-    return (selectedDuration ?? 0) *
-        50000; // Assuming same price as PC for simplicity
+    return (selectedDuration ?? 0) * 50000; // Assuming same price as PC for simplicity
   }
 
   TimeOfDay getEndTime() {
@@ -93,15 +92,13 @@ class TimeSelectionPSPage extends StatelessWidget {
     required this.psId,
   }) : super(key: key);
 
-  Future<List<Map<String, dynamic>>> _fetchBookedTimes(
-      int warnetId, int? psId, DateTime date, String? token) async {
+  Future<List<Map<String, dynamic>>> _fetchBookedTimes(int warnetId, int? psId, DateTime date, String? token) async {
     if (psId == null) {
       debugPrint('Error: psId is null');
       throw Exception('psId is required');
     }
 
-    final url =
-        'http://10.0.2.2:8000/api/booked_console?warnet_id=$warnetId&ps_id=$psId&date=${date.toIso8601String().split('T')[0]}';
+    final url = 'http://10.0.2.2:8000/api/booked_console?warnet_id=$warnetId&ps_id=$psId&date=${date.toIso8601String().split('T')[0]}';
     debugPrint('Request URL: $url');
 
     try {
@@ -135,8 +132,7 @@ class TimeSelectionPSPage extends StatelessWidget {
           throw Exception('Response data is not a list');
         }
       } else {
-        throw Exception(
-            'Failed to fetch booked times: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to fetch booked times: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       debugPrint('Exception caught: $e');
@@ -156,16 +152,12 @@ class TimeSelectionPSPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentDateTime =
-        DateTime(2025, 6, 9, 18, 50); // Updated to 06:50 PM WIB
-
     if (psId == null) {
       return Scaffold(
         body: Center(
           child: Text(
             'Error: PS ID is not provided. Please go back and select a PlayStation.',
-            style: TextStyle(
-                fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
+            style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
           ),
         ),
       );
@@ -178,20 +170,15 @@ class TimeSelectionPSPage extends StatelessWidget {
       ]).then((results) => {'token': results[0], 'userId': results[1]}),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        if (!snapshot.hasData ||
-            snapshot.data!['token'] == null ||
-            snapshot.data!['userId'] == null) {
+        if (!snapshot.hasData || snapshot.data!['token'] == null || snapshot.data!['userId'] == null) {
           return Scaffold(
             body: Center(
               child: Text(
                 'Please login to continue.',
-                style: TextStyle(
-                    fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
               ),
             ),
           );
@@ -206,8 +193,7 @@ class TimeSelectionPSPage extends StatelessWidget {
             builder: (context, timeState, child) {
               return Scaffold(
                 body: FutureBuilder<List<Map<String, dynamic>>>(
-                  future:
-                      _fetchBookedTimes(warnetId, psId, selectedDate, token),
+                  future: _fetchBookedTimes(warnetId, psId, selectedDate, token),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(child: CircularProgressIndicator());
@@ -216,14 +202,11 @@ class TimeSelectionPSPage extends StatelessWidget {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       debugPrint('No bookings found for this date.');
-                      return _buildBookingForm(
-                          context, timeState, token, userId, []);
+                      return _buildBookingForm(context, timeState, token, userId, []);
                     } else {
                       timeState.bookedTimes = snapshot.data!;
-                      debugPrint(
-                          'Booked times loaded: ${timeState.bookedTimes}');
-                      return _buildBookingForm(
-                          context, timeState, token, userId, snapshot.data!);
+                      debugPrint('Booked times loaded: ${timeState.bookedTimes}');
+                      return _buildBookingForm(context, timeState, token, userId, snapshot.data!);
                     }
                   },
                 ),
@@ -235,154 +218,272 @@ class TimeSelectionPSPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBookingForm(BuildContext context, TimeSelectionState timeState,
-      String token, int userId, List<Map<String, dynamic>> bookedTimes) {
-    final currentDateTime =
-        DateTime(2025, 6, 9, 18, 50); // Updated to 06:50 PM WIB
+  Widget _buildBookingForm(BuildContext context, TimeSelectionState timeState, String token, int userId, List<Map<String, dynamic>> bookedTimes) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? Color(0xFF6C5DD3) : Color(0xFF6C5DD3);
+    final accentColor = isDark ? Color(0xFFFFB800) : Color(0xFFFFB800);
 
-    return Stack(
-      children: [
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.65,
-            child: ClipPath(
-              clipper: WaveClipper(),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: Theme.of(context).brightness == Brightness.dark
-                        ? [
-                            Color(0xFF2C2F50),
-                            Color(0xFF1A1D40).withOpacity(0.9)
-                          ]
-                        : [
-                            Color(0xFF3A3D60),
-                            Color(0xFF2C2F50).withOpacity(0.85)
-                          ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.0, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark ? [Color(0xFF191B2F), Color(0xFF191B2F)] : [Colors.white, Colors.white],
         ),
-        SafeArea(
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white70,
-                        shadows: [
-                          Shadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? Color(0xFF262A43) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 20,
+                        ),
                       ),
-                      onPressed: () => Navigator.pop(context),
                     ),
                     Text(
-                      'Select Booking Time',
+                      "Select Time",
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.grey.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ).animate().fadeIn(duration: 600.ms),
+                    SizedBox(width: 40),
+                  ],
+                ),
+
+                SizedBox(height: 24),
+
+                // Booking info card
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Color(0xFF262A43) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.gamepad,
+                              color: primaryColor,
+                              size: 28,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "PS $psNumber",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                                Text(
+                                  warnetName,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white60 : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ).animate().fadeIn(duration: 600.ms),
-                    SizedBox(width: 48),
-                  ],
-                ),
-                SizedBox(height: 16),
+                      SizedBox(height: 16),
+                      Divider(color: isDark ? Colors.white12 : Colors.black12),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            DateFormat('EEEE, MMMM d, yyyy').format(selectedDate),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.2, end: 0),
+
+                SizedBox(height: 24),
+
+                // Booked times section
+                if (timeState.isLoading)
+                  Center(
+                    child: CircularProgressIndicator(
+                      color: primaryColor,
+                    ),
+                  )
+                else if (timeState.bookedTimes.isEmpty)
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.green,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          "No bookings yet for this date!",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(duration: 1000.ms)
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Already Booked Times",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ).animate().fadeIn(duration: 1000.ms),
+                      SizedBox(height: 12),
+                      Container(
+                        height: 60,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: timeState.bookedTimes.length,
+                          itemBuilder: (context, index) {
+                            final booking = timeState.bookedTimes[index];
+                            final start = booking['start'] as TimeOfDay;
+                            final end = booking['end'] as TimeOfDay;
+
+                            return Container(
+                              margin: EdgeInsets.only(right: 12),
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time_filled_rounded,
+                                    color: Colors.red,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "${start.format(context)} - ${end.format(context)}",
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ).animate().fadeIn(duration: 1000.ms + (index * 100).ms);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                SizedBox(height: 24),
+
+                // Time & Duration selection
                 Text(
-                  'Booking PS $psNumber at $warnetName on ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                  "Select Time & Duration",
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+                    color: isDark ? Colors.white : Colors.black,
                   ),
-                ).animate().fadeIn(duration: 600.ms),
+                ).animate().fadeIn(duration: 1200.ms),
                 SizedBox(height: 16),
-                bookedTimes.isEmpty
-                    ? Text(
-                        "No bookings yet for this date.",
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
-                      ).animate().fadeIn(duration: 600.ms)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Booked Times:",
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ).animate().fadeIn(duration: 600.ms),
-                          SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8.0,
-                            runSpacing: 4.0,
-                            children: bookedTimes.map((booking) {
-                              final start = booking['start'] as TimeOfDay;
-                              final end = booking['end'] as TimeOfDay;
-                              return Chip(
-                                label: Text(
-                                  "${start.format(context)} - ${end.format(context)}",
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                backgroundColor: Colors.redAccent,
-                                elevation: 2,
-                                shadowColor: Colors.black26,
-                              ).animate().fadeIn(duration: 600.ms);
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                SizedBox(height: 24),
+
+                // Time selection
                 GestureDetector(
                   onTap: () async {
                     final time = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.now(),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: ColorScheme.dark(
+                              primary: primaryColor,
+                              onPrimary: Colors.white,
+                              surface: isDark ? Color(0xFF262A43) : Colors.grey[900]!,
+                              onSurface: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
+
                     if (time != null) {
                       final selectedDateTime = DateTime(
                         selectedDate.year,
@@ -391,6 +492,7 @@ class TimeSelectionPSPage extends StatelessWidget {
                         time.hour,
                         time.minute,
                       );
+                      final currentDateTime = DateTime.now(); // Use current time
                       if (selectedDateTime.isBefore(currentDateTime)) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -407,257 +509,316 @@ class TimeSelectionPSPage extends StatelessWidget {
                     }
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
+                      color: isDark ? Color(0xFF262A43) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.blueAccent.withOpacity(0.5),
-                        width: 2,
+                        color: isDark ? Colors.white12 : Colors.black12,
+                        width: 1,
                       ),
-                      gradient: LinearGradient(
-                        colors: Theme.of(context).brightness == Brightness.dark
-                            ? [Color(0xFF1A1440), Color(0xFF262A50)]
-                            : [Colors.grey[300]!, Colors.grey[200]!],
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.access_time,
-                            color: Colors.blueAccent, size: 20),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            timeState.selectedTime == null
-                                ? "Select Time"
-                                : timeState.selectedTime!.format(context),
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              color: timeState.selectedTime == null
-                                  ? (Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.white70
-                                      : Colors.black54)
-                                  : (Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black87),
-                              fontWeight: timeState.selectedTime == null
-                                  ? FontWeight.normal
-                                  : FontWeight.w500,
-                            ),
+                        Icon(
+                          Icons.access_time_rounded,
+                          color: primaryColor,
+                          size: 24,
+                        ),
+                        SizedBox(width: 16),
+                        Text(
+                          timeState.selectedTime == null
+                              ? "Select Start Time"
+                              : "Start Time: ${timeState.selectedTime!.format(context)}",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
+                        ),
+                        Spacer(),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: isDark ? Colors.white38 : Colors.black38,
+                          size: 16,
                         ),
                       ],
                     ),
                   ),
-                ).animate().slideX(duration: 500.ms, begin: -0.5, end: 0.0),
+                ).animate().fadeIn(duration: 1300.ms).slideX(begin: -0.1, end: 0),
+
                 SizedBox(height: 16),
-                TextField(
-                  onChanged: (value) {
-                    final duration = int.tryParse(value) ?? 0;
-                    if (duration > 0) {
-                      timeState.setSelectedDuration(duration);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Duration (hours)",
-                    labelStyle: TextStyle(
-                      fontFamily: "Poppins",
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white70
-                          : Colors.black54,
-                    ),
-                    prefixIcon:
-                        Icon(Icons.hourglass_empty, color: Colors.blueAccent),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent.withOpacity(0.5),
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent.withOpacity(0.5),
-                        width: 2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark
-                        ? Color(0xFF1A1440)
-                        : Colors.grey[300],
-                  ),
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                ).animate().slideX(
-                    duration: 500.ms, begin: -0.5, end: 0.0, delay: 100.ms),
-                SizedBox(height: 12),
+
+                // Duration selection
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                    color: isDark ? Color(0xFF262A43) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.blueAccent.withOpacity(0.5),
-                      width: 2,
+                      color: isDark ? Colors.white12 : Colors.black12,
+                      width: 1,
                     ),
-                    gradient: LinearGradient(
-                      colors: Theme.of(context).brightness == Brightness.dark
-                          ? [Color(0xFF1A1440), Color(0xFF262A50)]
-                          : [Colors.grey[300]!, Colors.grey[200]!],
-                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.account_balance_wallet,
-                              color: Colors.blueAccent),
-                          SizedBox(width: 12),
+                          Icon(
+                            Icons.hourglass_top_rounded,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                          SizedBox(width: 16),
                           Text(
-                            "Total Price",
+                            "Duration (hours)",
                             style: TextStyle(
-                              fontFamily: "Poppins",
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white70
-                                  : Colors.black54,
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
                         ],
                       ),
-                      Text(
-                        "IDR ${timeState.getTotalPrice()}",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [1, 2, 3, 4, 5].map((hours) {
+                          final isSelected = timeState.selectedDuration == hours;
+
+                          return GestureDetector(
+                            onTap: () {
+                              timeState.setSelectedDuration(hours);
+                            },
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 200),
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDark ? Color(0xFF1F2236) : Colors.grey[200]),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: primaryColor.withOpacity(0.4),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Text(
+                                "$hours h",
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark ? Colors.white : Colors.black),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),
-                ).animate().slideX(
-                    duration: 500.ms, begin: -0.5, end: 0.0, delay: 200.ms),
+                ).animate().fadeIn(duration: 1400.ms).slideX(begin: -0.1, end: 0),
+
                 SizedBox(height: 24),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    child: ElevatedButton(
-                      onPressed: timeState.selectedTime != null &&
-                              timeState.selectedDuration != null
-                          ? () {
-                              if (timeState.isTimeSlotAvailable(context)) {
-                                timeState.setLoading(true);
-                                _showPaymentDialog(
-                                    context,
-                                    timeState,
-                                    warnetName,
-                                    psNumber,
-                                    selectedDate,
-                                    psId,
-                                    token,
-                                    userId);
-                              }
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
+
+                // Booking summary
+                if (timeState.selectedTime != null && timeState.selectedDuration != null)
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Color(0xFF262A43) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                        width: 1,
                       ),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: timeState.selectedTime != null &&
-                                    timeState.selectedDuration != null
-                                ? [Colors.purpleAccent, Colors.blueAccent]
-                                : [Colors.grey[600]!, Colors.grey[700]!],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Booking Summary",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: timeState.selectedTime != null &&
-                                      timeState.selectedDuration != null
-                                  ? Colors.purpleAccent.withOpacity(0.4)
-                                  : Colors.grey.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
+                        ),
+                        SizedBox(height: 16),
+                        _buildSummaryRow(
+                          "Date",
+                          DateFormat('EEEE, MMMM d, yyyy').format(selectedDate),
+                          Icons.calendar_today_rounded,
+                          isDark,
+                        ),
+                        SizedBox(height: 8),
+                        _buildSummaryRow(
+                          "Time",
+                          "${timeState.selectedTime!.format(context)} - ${timeState.getEndTime().format(context)}",
+                          Icons.access_time_rounded,
+                          isDark,
+                        ),
+                        SizedBox(height: 8),
+                        _buildSummaryRow(
+                          "Duration",
+                          "${timeState.selectedDuration} hours",
+                          Icons.hourglass_top_rounded,
+                          isDark,
+                        ),
+                        SizedBox(height: 8),
+                        _buildSummaryRow(
+                          "PS",
+                          "PS $psNumber",
+                          Icons.gamepad,
+                          isDark,
+                        ),
+                        SizedBox(height: 16),
+                        Divider(color: isDark ? Colors.white12 : Colors.black12),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Total Price",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            Text(
+                              "IDR ${timeState.getTotalPrice()}",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: accentColor,
+                              ),
                             ),
                           ],
                         ),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 40, vertical: 12),
-                          child: Center(
-                            child: timeState.isLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    'Next',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.grey.withOpacity(0.3),
-                                          blurRadius: 6,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
+                      ],
                     ),
-                  ).animate().fadeIn(duration: 600.ms).scale(),
-                ),
+                  ).animate().fadeIn(duration: 1500.ms).scale(begin: Offset(0.95, 0.95)),
+
+                SizedBox(height: 32),
+
+                // Book Now button
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: timeState.selectedTime != null && timeState.selectedDuration != null && !timeState.isLoading
+                        ? () {
+                            if (timeState.isTimeSlotAvailable(context)) {
+                              timeState.setLoading(true);
+                              _showPaymentDialog(context, timeState, warnetName, psNumber, selectedDate, psId, token, userId);
+                            }
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      disabledBackgroundColor: isDark ? Colors.white24 : Colors.grey[300],
+                    ),
+                    child: timeState.isLoading
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            "Book Now",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ).animate().fadeIn(duration: 1600.ms).slideY(begin: 0.2, end: 0),
+                SizedBox(height: 32),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: isDark ? Colors.white60 : Colors.black54,
+          size: 18,
+        ),
+        SizedBox(width: 12),
+        Text(
+          "$label:",
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            textAlign: TextAlign.right,
           ),
         ),
       ],
     );
   }
 
-  void _showPaymentDialog(
-      BuildContext context,
-      TimeSelectionState timeState,
-      String warnetName,
-      int psNumber,
-      DateTime selectedDate,
-      int? psId,
-      String token,
-      int userId) {
+  void _showPaymentDialog(BuildContext context, TimeSelectionState timeState, String warnetName, int psNumber, DateTime selectedDate, int? psId, String token, int userId) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -778,11 +939,9 @@ class TimeSelectionPSPage extends StatelessWidget {
                               psId != null) {
                             timeState.setLoading(true);
                             try {
-                              await _bookSlotToDatabase(context, timeState,
-                                  psId, selectedDate, token, userId);
+                              await _bookSlotToDatabase(context, timeState, psId, selectedDate, token, userId);
                               Navigator.pop(context); // Close payment dialog
-                              Navigator.pushNamed(context, '/history',
-                                  arguments: {'refreshOnLoad': true});
+                              Navigator.pushNamed(context, '/history', arguments: {'refreshOnLoad': true});
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -821,7 +980,8 @@ class TimeSelectionPSPage extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: timeState.isLoading
@@ -856,13 +1016,7 @@ class TimeSelectionPSPage extends StatelessWidget {
     );
   }
 
-  Future<void> _bookSlotToDatabase(
-      BuildContext context,
-      TimeSelectionState timeState,
-      int psId,
-      DateTime selectedDate,
-      String token,
-      int userId) async {
+  Future<void> _bookSlotToDatabase(BuildContext context, TimeSelectionState timeState, int psId, DateTime selectedDate, String token, int userId) async {
     final startTime = DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -870,8 +1024,7 @@ class TimeSelectionPSPage extends StatelessWidget {
       timeState.selectedTime!.hour,
       timeState.selectedTime!.minute,
     );
-    final endTime =
-        startTime.add(Duration(hours: timeState.selectedDuration ?? 0));
+    final endTime = startTime.add(Duration(hours: timeState.selectedDuration ?? 0));
     final totalPrice = timeState.getTotalPrice();
 
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
@@ -896,8 +1049,7 @@ class TimeSelectionPSPage extends StatelessWidget {
     );
 
     if (response.statusCode != 201) {
-      throw Exception(
-          'Failed to book slot: ${response.statusCode} - ${response.body}');
+      throw Exception('Failed to book slot: ${response.statusCode} - ${response.body}');
     }
   }
 }
