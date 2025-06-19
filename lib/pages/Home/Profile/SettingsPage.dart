@@ -1,7 +1,7 @@
 import 'package:fikzuas/core/themes/theme_provider.dart';
+import 'package:fikzuas/pages/Home/Profile/Edit/EditProfilPage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fikzuas/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -21,6 +21,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
   bool isLoading = false;
   bool isDataExpanded = false;
   String? userName;
+  String? email; // Store user's email
   String body = "Belum Ada Data";
   bool notificationsEnabled = true;
   String selectedLanguage = "English";
@@ -51,6 +52,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     final token = prefs.getString('token');
     if (token != null) {
       try {
+        print('Loading user data with token: $token');
         final response = await http.get(
           Uri.parse('http://10.0.2.2:8000/api/user'),
           headers: {
@@ -58,25 +60,35 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
             'Content-Type': 'application/json',
           },
         );
+        print('GET /api/user response: status=${response.statusCode}, body=${response.body}');
+
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           setState(() {
             userName = data['user']['name'] ?? "Pengguna Tidak Ditemukan";
+            email = data['user']['email'] ?? "email@example.com"; // Fetch email
           });
+          print('User data loaded: name=$userName, email=$email');
         } else {
           setState(() {
             userName = "Pengguna Tidak Ditemukan";
+            email = "email@example.com";
           });
+          print('Failed to load user data: status=${response.statusCode}, body=${response.body}');
         }
       } catch (e) {
         setState(() {
           userName = "Error: $e";
+          email = "email@example.com";
         });
+        print('Error loading user data: $e');
       }
     } else {
       setState(() {
         userName = "Belum Login";
+        email = "email@example.com";
       });
+      print('No token found in SharedPreferences');
     }
   }
 
@@ -94,11 +106,13 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
             : "Gagal memuat data: ${response.statusCode}";
         isLoading = false;
       });
+      print('fetchData response: status=${response.statusCode}, body=${response.body}');
     } catch (e) {
       setState(() {
         body = "Error: $e";
         isLoading = false;
       });
+      print('Error fetching data: $e');
     }
   }
 
@@ -208,7 +222,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                               ),
                               SizedBox(height: 4),
                               Text(
-                                "alex.johnson@example.com", // Placeholder email
+                                email ?? "Memuat Email...", // Display actual email
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.8),
                                   fontSize: 14,
@@ -274,6 +288,15 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                   subtitle: "Change your personal information",
                   color: Colors.blue,
                   isDark: isDark,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => EditProfilePage()),
+                    ).then((_) {
+                      print('Returned from EditProfilePage, reloading user data');
+                      _loadUserData(); // Refresh data on return
+                    });
+                  },
                 ),
                 _buildSettingItem(
                   icon: Icons.lock,
@@ -584,4 +607,3 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     ).animate().fadeIn(duration: 800.ms);
   }
 }
-

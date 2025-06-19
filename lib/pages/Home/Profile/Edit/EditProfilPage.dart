@@ -21,6 +21,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
   bool isLoading = false;
   String? userName;
   String? email;
+  int? idUser; // Store id_user
   String? profileImageUrl;
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
@@ -53,6 +54,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
     final token = prefs.getString('token');
     if (token != null) {
       try {
+        print('Loading user data with token: $token');
         final response = await http.get(
           Uri.parse('http://10.0.2.2:8000/api/user'),
           headers: {
@@ -60,21 +62,32 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
             'Content-Type': 'application/json',
           },
         );
+        print('GET /api/user response: status=${response.statusCode}, body=${response.body}');
+
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           setState(() {
+            idUser = data['user']['id_user']; // Store id_user
             userName = data['user']['name'] ?? "Pengguna Tidak Ditemukan";
             email = data['user']['email'] ?? "email@example.com";
             _nameController.text = userName!;
             _emailController.text = email!;
             profileImageUrl = "https://picsum.photos/id/1005/200/300"; // Placeholder
           });
+          print('User data loaded: id_user=$idUser, name=$userName, email=$email');
+        } else {
+          setState(() {
+            userName = "Error: Status ${response.statusCode}";
+          });
         }
       } catch (e) {
         setState(() {
           userName = "Error: $e";
         });
+        print('Error loading user data: $e');
       }
+    } else {
+      print('No token found in SharedPreferences');
     }
   }
 
@@ -86,18 +99,33 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    if (idUser == null) {
+      setState(() { isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User ID not found. Please reload profile.')),
+      );
+      print('Error: id_user is null');
+      return;
+    }
+
     try {
+      final requestBody = jsonEncode({
+        'id_user': idUser,
+        'name': _nameController.text,
+        'email': _emailController.text,
+      });
+      print('Sending PUT /api/user with body: $requestBody, token: $token');
+
       final response = await http.put(
         Uri.parse('http://10.0.2.2:8000/api/user'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'name': _nameController.text,
-          'email': _emailController.text,
-        }),
+        body: requestBody,
       );
+
+      print('PUT /api/user response: status=${response.statusCode}, body=${response.body}');
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +138,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
         );
       }
     } catch (e) {
+      print('Error updating profile: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -140,7 +169,6 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profile Image Section
                   Center(
                     child: Stack(
                       alignment: Alignment.bottomRight,
@@ -188,8 +216,6 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
                     ),
                   ),
                   SizedBox(height: 24),
-
-                  // Form Section
                   Form(
                     key: _formKey,
                     child: Column(
@@ -219,8 +245,6 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
                     ),
                   ),
                   SizedBox(height: 32),
-
-                  // Save Button
                   Container(
                     width: double.infinity,
                     child: ElevatedButton(
