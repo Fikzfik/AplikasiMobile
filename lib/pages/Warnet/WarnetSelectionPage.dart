@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:fikzuas/booking_state.dart';
+import 'package:fikzuas/core/BookingState/booking_state.dart';
 import 'package:fikzuas/pages/Warnet/PcListPage.dart';
 
 class WarnetSelectionPage extends StatefulWidget {

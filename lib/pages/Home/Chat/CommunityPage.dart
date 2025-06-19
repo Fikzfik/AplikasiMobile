@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:fikzuas/core/themes/theme_provider.dart';
+import 'package:fikzuas/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../main.dart';
-import 'chat_group_screen.dart';
-import 'find_friends_screen.dart';
+import 'package:fikzuas/pages/Home/Chat/Grup/chat_group_screen.dart';
+import 'package:fikzuas/pages/Home/Chat/FindFriends/find_friends_screen.dart';
 
 class CommunityChat extends StatefulWidget {
   @override

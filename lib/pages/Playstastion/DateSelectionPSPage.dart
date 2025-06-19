@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
-import 'package:fikzuas/pages/Warnet/TimeSelectionPSPage.dart';
+import 'package:fikzuas/pages/Playstastion/TimeSelectionPSPage.dart';
 
 class DateSelectionPSPage extends StatefulWidget {
   final String warnetName;

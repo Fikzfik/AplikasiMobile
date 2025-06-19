@@ -1,3 +1,5 @@
+import 'package:fikzuas/core/themes/theme_provider.dart';
+import 'package:fikzuas/pages/Home/HomePage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:convert';
@@ -5,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/main.dart';
-import 'homepage.dart';
+
 
 class LoginPage extends StatefulWidget {
   @override

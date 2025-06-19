@@ -1,7 +1,8 @@
 import 'dart:convert';
+import 'package:fikzuas/core/themes/theme_provider.dart';
 import 'package:fikzuas/main.dart';
-import 'package:fikzuas/pages/CommunityPage.dart';
-import 'package:fikzuas/pages/privatechatscreen.dart';
+import 'package:fikzuas/pages/home/chat/CommunityPage.dart';
+import 'package:fikzuas/pages/Home/Chat/Private/privatechatscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;

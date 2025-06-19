@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/main.dart'; // Import main.dart for ThemeProvider
+import 'package:fikzuas/core/themes/theme_provider.dart';
 
 class TopUpGameSelectionPage extends StatefulWidget {
   @override

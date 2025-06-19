@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:fikzuas/core/themes/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../main.dart';
+import '../../../../main.dart';
 
 class ChatGroupScreen extends StatefulWidget {
   final String game;

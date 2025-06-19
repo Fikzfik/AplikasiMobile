@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:fikzuas/core/themes/theme_provider.dart';
 
 class PrivateChatScreen extends StatefulWidget {
   final int otherUserId;

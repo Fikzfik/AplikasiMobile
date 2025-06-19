@@ -1,3 +1,4 @@
+import 'package:fikzuas/core/themes/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -124,8 +125,12 @@ class _HistoryPageRedesignedState extends State<HistoryPage>
 
         for (var item in allItems) {
           String amountStr = item['amount'] as String? ?? 'Rp 0';
-          double amount =
-              double.tryParse(amountStr.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+          // Hapus "Rp " dan ganti koma dengan titik sebelum parsing
+          double amount = double.tryParse(amountStr
+                  .replaceAll('Rp ', '')
+                  .replaceAll('.', '')
+                  .replaceAll(',', '.')) ??
+              0.0;
           totalAmt += amount;
 
           String status = (item['status'] as String? ?? '').toLowerCase();
@@ -311,10 +316,7 @@ class _HistoryPageRedesignedState extends State<HistoryPage>
                 ),
                 SizedBox(height: 24),
                 // Quick Actions
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: buildQuickActions(context, isDark),
-                ),
+
                 SizedBox(height: 24),
                 // Categories Section
                 FadeTransition(
@@ -530,82 +532,6 @@ class _HistoryPageRedesignedState extends State<HistoryPage>
           ),
         ),
       ],
-    );
-  }
-
-  Widget buildQuickActions(BuildContext context, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Quick Actions",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Inter',
-          ),
-        ),
-        SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildQuickActionButton(
-                context, Icons.download, "Export", Colors.blue, isDark),
-            _buildQuickActionButton(
-                context, Icons.analytics, "Analytics", Colors.green, isDark),
-            _buildQuickActionButton(
-                context, Icons.search, "Search", Colors.orange, isDark),
-            _buildQuickActionButton(
-                context, Icons.settings, "Settings", Colors.purple, isDark),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActionButton(BuildContext context, IconData icon,
-      String label, Color color, bool isDark) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$label action tapped!')),
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isDark ? Color(0xFF1F2937) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Inter',
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

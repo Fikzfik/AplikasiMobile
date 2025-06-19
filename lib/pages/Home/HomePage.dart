@@ -1,10 +1,11 @@
+import 'package:fikzuas/core/themes/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fikzuas/main.dart';
-import 'package:fikzuas/pages/DashboardPage.dart';
-import 'package:fikzuas/pages/CommunityPage.dart';
-import 'package:fikzuas/pages/HistoryPage.dart';
-import 'package:fikzuas/pages/SettingsPage.dart';
+import 'package:fikzuas/pages/Home/Dashboard/DashboardPage.dart';
+import 'package:fikzuas/pages/home/chat/CommunityPage.dart';
+import 'package:fikzuas/pages/home/history/HistoryPage.dart';
+import 'package:fikzuas/pages/home/profile/SettingsPage.dart';
 
 class HomePage extends StatefulWidget {
   @override

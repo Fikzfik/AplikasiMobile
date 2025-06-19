@@ -6,6 +6,7 @@ import 'package:simple_animations/animation_builder/custom_animation_builder.dar
 import 'package:provider/provider.dart';
 import 'package:fikzuas/main.dart'; // Import main.dart for ThemeProvider
 import 'JokiFormPage.dart';
+import 'package:fikzuas/core/themes/theme_provider.dart';
 
 class JasaJokiPage extends StatefulWidget {
   const JasaJokiPage({super.key});
