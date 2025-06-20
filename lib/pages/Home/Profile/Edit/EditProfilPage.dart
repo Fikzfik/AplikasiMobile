@@ -21,10 +21,11 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
   bool isLoading = false;
   String? userName;
   String? email;
-  int? idUser; // Store id_user
+  int? idUser;
   String? profileImageUrl;
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
+  TextEditingController _imageUrlController = TextEditingController();
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
     _controller.dispose();
     _nameController.dispose();
     _emailController.dispose();
+    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -67,12 +69,13 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           setState(() {
-            idUser = data['user']['id_user']; // Store id_user
+            idUser = data['user']['id_user'];
             userName = data['user']['name'] ?? "Pengguna Tidak Ditemukan";
             email = data['user']['email'] ?? "email@example.com";
             _nameController.text = userName!;
             _emailController.text = email!;
-            profileImageUrl = "https://picsum.photos/id/1005/200/300"; // Placeholder
+            profileImageUrl = data['user']['profile_image'] ?? "https://picsum.photos/id/1005/200/300";
+            _imageUrlController.text = profileImageUrl ?? "";
           });
           print('User data loaded: id_user=$idUser, name=$userName, email=$email');
         } else {
@@ -113,6 +116,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
         'id_user': idUser,
         'name': _nameController.text,
         'email': _emailController.text,
+        'profile_image': _imageUrlController.text.isNotEmpty ? _imageUrlController.text : null,
       });
       print('Sending PUT /api/user with body: $requestBody, token: $token');
 
@@ -196,7 +200,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
                         GestureDetector(
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Image upload feature coming soon!')),
+                              SnackBar(content: Text('Enter image URL in the field below!')),
                             );
                           },
                           child: Container(
@@ -206,7 +210,7 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.camera_alt,
+                              Icons.link,
                               size: 20,
                               color: primaryColor,
                             ),
@@ -239,6 +243,14 @@ class _EditProfilePageState extends State<EditProfilePage> with SingleTickerProv
                               return "Enter a valid email";
                             return null;
                           },
+                          isDark: isDark,
+                        ),
+                        SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _imageUrlController,
+                          label: "Image URL",
+                          icon: Icons.image,
+                          validator: (value) => value!.isEmpty ? null : null, // Optional
                           isDark: isDark,
                         ),
                       ],
